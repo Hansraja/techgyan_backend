@@ -3,7 +3,7 @@ from graphene import ObjectType, String, Schema, List
 from graphene_django import DjangoObjectType
 from User.schema import UserType
 
-class CreatorType(DjangoObjectType):
+class Creator(DjangoObjectType):
     class Meta:
         model = Creator
         fields = "__all__"
@@ -14,8 +14,8 @@ class CreatorFollowerType(DjangoObjectType):
         fields = "__all__"
 
 class Query(ObjectType):
-    Creators = List(CreatorType)
-    Creator = List(CreatorType, name=String(), handle=String())
+    Creators = List(Creator)
+    Creator = List(Creator, name=String(), handle=String())
     CreatorFollowers = List(CreatorFollowerType)
 
     def resolve_Creators(self, info):
