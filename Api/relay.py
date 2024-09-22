@@ -16,7 +16,6 @@ class NodeField(Field):
         super(NodeField, self).__init__(
             # If we don't specify a type, the field type will be the node interface
             type_ or node,
-            print(type_, node),
             id=global_id_type.graphene_type(
                 required=True, description="The ID of the object"
             ),

@@ -10,7 +10,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from User.Utils.config import UserManager
-from django.contrib.postgres.fields import ArrayField
 from nanoid import generate
 
 @deconstructible
@@ -29,7 +28,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         _('username'),
         max_length=190,
         unique=True,
-        db_collation="case_insensitive",
         help_text=_('Required. 190 characters or fewer. Letters, digits and _ only.'),
         validators=[username_validator],
         error_messages={

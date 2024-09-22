@@ -7,11 +7,11 @@ from django.contrib.postgres.fields import ArrayField
 class Creator(models.Model):
     key = models.CharField(max_length=24, unique=True, editable=False)
     name = models.CharField(max_length=255)
-    handle = models.CharField(max_length=180, unique=True, db_collation="case_insensitive")
+    handle = models.CharField(max_length=180, unique=True)
     description = models.TextField(blank=True, null=True)
     image = models.ForeignKey('Common.Image', on_delete=models.SET_NULL, null=True, blank=True)
     banner = models.ForeignKey('Common.Image', on_delete=models.SET_NULL, null=True, blank=True, related_name='banner')
-    social = ArrayField(models.JSONField(default=dict), blank=True, null=True)
+    social = models.JSONField(default=list, blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
