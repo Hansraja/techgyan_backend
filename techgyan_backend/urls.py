@@ -18,9 +18,18 @@ from django.contrib import admin
 from django.urls import path
 from graphene_django.views import GraphQLView
 from Api.views import image_upload
+from django.conf import settings
+from Api.graphql import GraphQl
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', GraphQLView.as_view(graphiql=True)),
+    path('api/', GraphQl.as_view(graphiql=True,)),
     path('image_upload', image_upload)
 ]
+
+if settings.DEBUG:
+    from django.conf import settings
+    from django.conf.urls.static import static
+
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -41,7 +41,8 @@ ALLOWED_HOSTS = ['*', 'localhost']
 AUTH_USER_MODEL = 'User.User'
 
 GRAPHENE = {
-    "SCHEMA": "Api.schema.schema"
+    "SCHEMA": "Api.schema.schema",
+    "SUBSCRIPTION_PATH": "/ws/graphql"
 }
 
 INSTALLED_APPS = [
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'graphene_django',
+    'channels',
 ] + [
     'User',
     'Common',

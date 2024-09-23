@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>GraphiQL</title>
+    <style>
+        body {
+            height: 100%;
+            margin: 0;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #graphiql {
+            height: 100vh;
+        }
+
+    </style>
+
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+</head>
+
+<body>
+    <div id="graphiql">Loading...</div>
+    <script src="https://unpkg.com/graphiql/graphiql.min.js" type="application/javascript"></script>
+    <script>
+        const GRAPHQL_WS_ENDPOINT =
+            (location.protocol === "https" ? "wss" : "ws") +
+            "://" +
+            location.host +
+            "/ws/graphql";
+        const GRAPHQL_ENDPOINT =
+            location.protocol +
+            "//" +
+            location.host +
+            "/api/";
+
+        ReactDOM.render(
+            React.createElement(GraphiQL, {
+                fetcher: GraphiQL.createFetcher({
+                    url: GRAPHQL_ENDPOINT,
+                    subscriptionUrl: GRAPHQL_WS_ENDPOINT,
+                }),
+                defaultEditorToolsVisibility: true,
+            }),
+            document.getElementById('graphiql'),
+        );
+    </script>
+</body>
+
+</html>
