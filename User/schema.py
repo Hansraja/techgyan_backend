@@ -1,5 +1,6 @@
 
-from graphene import ObjectType, List, Field, Int, String, relay as gRelay
+from graphene import ObjectType, List, Field, Int, String, relay as gRelay, Boolean
+import graphene
 from graphene_django.types import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from Api import relay
@@ -7,10 +8,21 @@ from Api import relay
 from .models import User
 
 class UserType(DjangoObjectType):
+    is_followed = Boolean()
+    name = graphene.String()
+
     class Meta:
         model = User
         exclude = ('password', 'is_superuser', 'is_staff', 'is_active', 'date_joined', 'last_login')
 
+    def resolve_is_followed(self, info):
+        user = info.context.user
+        if user.is_anonymous:
+            return False
+        return self.following.filter(pk=user.pk).exists()
+    
+    def resolve_name(self, info):
+        return self.get_full_name()
 
 class UserNode(DjangoObjectType):
     class Meta:
@@ -40,17 +52,27 @@ class CreateUser(gRelay.ClientIDMutation):
         user = User.objects.create_user(username=username, email=email, password=password)
         return CreateUser(user=user)
     
-class UpdateUser(gRelay.ClientIDMutation):
+class UserInput(graphene.InputObjectType):
+    username = String()
+    first_name = String()
+    last_name = String()
+    sex = String()
+    dob = graphene.Date()
+
+class UpdateUser(graphene.Mutation):
     class Input:
-        username = String()
-        email = String()
-        key = String()
+        key = String(required=True)
+        data = UserInput()
 
     user = Field(UserType)
 
-    def mutate_and_get_payload(self, info, username = None, email = None, key = None):
-        user = User.objects.get(username=username) if username else User.objects.get(key=key)
-        user.email = email
+    def mutate(self, info, key = None, data = None):
+        user = User.objects.get(key=key)
+        user.username = data.username if data.username else user.username
+        user.first_name = data.first_name if data.first_name else user.first_name
+        user.last_name = data.last_name if data.last_name else user.last_name
+        user.sex = data.sex if data.sex else user.sex
+        user.dob = data.dob if data.dob else user.dob
         user.save()
         return UpdateUser(user=user)
     
@@ -72,18 +94,19 @@ class Mutation(ObjectType):
     delete_user = DeleteUser.Field()
 
 class Query(ObjectType):
-    Users = List(UserType)
+    Users = DjangoFilterConnectionField(UserNode)
     User = Field(UserType, username=String(), key=String())
+    me = Field(UserType)
 
-    all_users = DjangoFilterConnectionField(UserNode)
-    a_user = relay.Node.Field(UserNode)
-
-    def resolve_Users(self, info):
-        return User.objects.all()
-    
     def resolve_User(self, info, username=None, key=None):
         if not username and not key:
             raise Exception('Please provide either username or id')
         u = User.objects.get(username=username) if username else User.objects.get(key=key)
         return u
+    
+    def resolve_me(self, info):
+        user = info.context.user
+        if user.is_anonymous:
+            raise Exception('Not logged in')
+        return user
 

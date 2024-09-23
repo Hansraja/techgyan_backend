@@ -16,14 +16,13 @@ class MySubscription(channels_graphql_ws.Subscription):
         arg2 = graphene.String()
 
     @staticmethod
-    def subscribe(root, info, arg1, arg2):
+    def subscribe(root, info):
         """Called when user subscribes."""
-
         # Return the list of subscription group names.
-        return ["group42"]
+        return ["my_subscription"]
 
     @staticmethod
-    def publish(payload, info, arg1, arg2):
+    def publish(payload, info):
         """Called to notify the client."""
 
         # Here `payload` contains the `payload` from the `broadcast()`
@@ -32,7 +31,7 @@ class MySubscription(channels_graphql_ws.Subscription):
         # this allows to avoid notifications for the actions made by
         # this particular client.
 
-        return MySubscription(event="Something has happened!")
+        return MySubscription(event=f"Event triggered (by hello query): {str(payload)}")
 
 class Subscription(graphene.ObjectType):
-    my_subscription = MySubscription.Field()
+    test_subscription = MySubscription.Field()

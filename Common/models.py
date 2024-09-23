@@ -21,7 +21,8 @@ class Image(models.Model):
         return self.url
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -41,7 +42,8 @@ class Tag(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -61,6 +63,7 @@ class Category(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self

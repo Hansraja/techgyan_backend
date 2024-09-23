@@ -42,7 +42,13 @@ AUTH_USER_MODEL = 'User.User'
 
 GRAPHENE = {
     "SCHEMA": "Api.schema.schema",
-    "SUBSCRIPTION_PATH": "/ws/graphql"
+    "SUBSCRIPTION_PATH": "/api/"
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
 }
 
 INSTALLED_APPS = [
@@ -141,7 +147,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = '/static'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
 MEDIA_URL = 'https://media.techgyan.collegejaankaar.in/'

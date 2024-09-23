@@ -64,7 +64,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.username
     
     def save(self, *args, **kwargs):
-        self.key = generate(size=24)
+        if not self.pk:
+            self.key = generate(size=24)
         super().save(*args, **kwargs)
         
     def clean(self):

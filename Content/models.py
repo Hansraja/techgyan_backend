@@ -5,9 +5,9 @@ from nanoid import generate
 class Story(models.Model):
     slug = models.SlugField(max_length=255, unique=True)
     key = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, blank=True)
     description = models.TextField(null=True, blank=True)
-    content = models.TextField()
+    content = models.TextField(blank=True)
     author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE)
     image = models.ForeignKey('Common.Image', on_delete=models.SET_NULL, null=True, blank=True)
     state = models.CharField(max_length=20, default='draft', choices=[
@@ -39,7 +39,8 @@ class Story(models.Model):
         return self.title
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=28)
+        if not self.pk:
+            self.key = generate(size=28)
         super().save(*args, **kwargs)
         return self
     
@@ -60,7 +61,8 @@ class StoryClap(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -85,7 +87,8 @@ class StoryComment(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:  
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -109,7 +112,8 @@ class StoryCommentVote(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -157,7 +161,8 @@ class Post(models.Model):
         return self.title
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=30)
+        if not self.pk:
+            self.id = generate(size=30)
         super().save(*args, **kwargs)
         return self
     
@@ -178,7 +183,8 @@ class PostClap(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -204,7 +210,8 @@ class PostComment(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -229,7 +236,8 @@ class PostCommentVote(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -251,7 +259,8 @@ class PostPoll(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+           self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -273,7 +282,8 @@ class PostPollVote(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -298,7 +308,8 @@ class PostEvent(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
 
@@ -319,7 +330,8 @@ class PostEventAttendee(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -340,7 +352,8 @@ class PostEventSpeaker(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -361,7 +374,8 @@ class PostImage(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
     
@@ -380,6 +394,7 @@ class PostImageObj(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id = generate(size=40)
+        if not self.pk:
+            self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self

@@ -17,7 +17,7 @@ class Creator(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(blank=True, null=True)
-
+    user = models.ForeignKey('User.User', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'creators'
@@ -28,7 +28,8 @@ class Creator(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
-        self.key = generate(size=24)
+        if not self.pk:
+            self.key = generate(size=24)
         super().save(*args, **kwargs)
         return self
     
