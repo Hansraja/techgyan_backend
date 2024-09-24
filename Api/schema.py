@@ -4,18 +4,19 @@ from graphene_django import DjangoObjectType
 from User.schema import Query as UserQuery, Mutation as UserMutation
 from Creator.schema import Query as CreatorQuery, Mutation as CreatorMutation
 from Content.schema import Query as ContentQuery, Mutation as ContentMutation
+from Common.schema import Query as CommonQuery, Mutation as CommonMutation
 
 from Api.subscriptions import Subscription as ApiSubscription, MySubscription
 
 
-class Query(UserQuery, CreatorQuery, ContentQuery):
+class Query(UserQuery, CreatorQuery, ContentQuery, CommonQuery):
     hello = String(name=String(default_value="stranger"))
 
     def resolve_hello(self, info, name):
         MySubscription.broadcast(group="my_subscription", payload={"value": name})
         return f"Hello, {name}!"
 
-class Mutation(UserMutation, CreatorMutation, ContentMutation):
+class Mutation(UserMutation, CreatorMutation, ContentMutation, CommonMutation):
     pass
 
 class Subscription(ApiSubscription):

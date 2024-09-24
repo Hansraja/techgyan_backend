@@ -4,6 +4,8 @@ import graphene
 from graphene_django.types import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from Api import relay
+from Common.types import ImageInput
+from User.Utils.tools import ImageHandler
 
 from .models import User
 
@@ -58,6 +60,7 @@ class UserInput(graphene.InputObjectType):
     last_name = String()
     sex = String()
     dob = graphene.Date()
+    image = ImageInput()
 
 class UpdateUser(graphene.Mutation):
     class Input:
@@ -73,6 +76,8 @@ class UpdateUser(graphene.Mutation):
         user.last_name = data.last_name if data.last_name else user.last_name
         user.sex = data.sex if data.sex else user.sex
         user.dob = data.dob if data.dob else user.dob
+        if data.image:
+            user.image = ImageHandler(data.image).auto_image()
         user.save()
         return UpdateUser(user=user)
     

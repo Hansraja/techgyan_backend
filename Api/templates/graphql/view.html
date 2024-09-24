@@ -43,7 +43,7 @@
       favored resource bundler.
      -->
   <script src="https://unpkg.com/graphiql/graphiql.min.js" type="application/javascript"></script>
-  <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+  <!-- <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" /> -->
   <!-- 
       These are imports for the GraphIQL Explorer plugin.
      -->
@@ -52,6 +52,9 @@
   <link rel="stylesheet" href="https://unpkg.com/@graphiql/plugin-explorer/dist/style.css" />
 
   <style rel="stylesheet" crossorigin="">
+    /*!*********************************************************************************************!*\
+    !*** css ../../../node_modules/css-loader/dist/cjs.js!../../graphiql-react/font/roboto.css ***!
+    \*********************************************************************************************/
     @font-face {
       font-family: Roboto;
       font-style: italic;
@@ -305,8 +308,8 @@
     }
 
     /*!************************************************************************************************!*\
-      !*** css ../../../node_modules/css-loader/dist/cjs.js!../../graphiql-react/font/fira-code.css ***!
-      \************************************************************************************************/
+    !*** css ../../../node_modules/css-loader/dist/cjs.js!../../graphiql-react/font/fira-code.css ***!
+    \************************************************************************************************/
     @font-face {
       font-family: Fira Code;
       font-style: normal;
@@ -362,8 +365,8 @@
     }
 
     /*!********************************************************************************************!*\
-      !*** css ../../../node_modules/css-loader/dist/cjs.js!../../graphiql-react/dist/style.css ***!
-      \********************************************************************************************/
+    !*** css ../../../node_modules/css-loader/dist/cjs.js!../../graphiql-react/dist/style.css ***!
+    \********************************************************************************************/
     .graphiql-container * {
       box-sizing: border-box;
       font-variant-ligatures: none
@@ -372,7 +375,10 @@
     .graphiql-container,
     .CodeMirror-info,
     .CodeMirror-lint-tooltip,
-    reach-portal {
+    .graphiql-dialog,
+    .graphiql-dialog-overlay,
+    .graphiql-tooltip,
+    [data-radix-popper-content-wrapper] {
       --color-primary: 320, 95%, 43%;
       --color-secondary: 242, 51%, 61%;
       --color-tertiary: 188, 100%, 36%;
@@ -423,7 +429,10 @@
       body:not(.graphiql-light) .graphiql-container,
       body:not(.graphiql-light) .CodeMirror-info,
       body:not(.graphiql-light) .CodeMirror-lint-tooltip,
-      body:not(.graphiql-light) reach-portal {
+      body:not(.graphiql-light) .graphiql-dialog,
+      body:not(.graphiql-light) .graphiql-dialog-overlay,
+      body:not(.graphiql-light) .graphiql-tooltip,
+      body:not(.graphiql-light) [data-radix-popper-content-wrapper] {
         --color-primary: 338, 100%, 67%;
         --color-secondary: 243, 100%, 77%;
         --color-tertiary: 188, 100%, 44%;
@@ -441,7 +450,10 @@
     body.graphiql-dark .graphiql-container,
     body.graphiql-dark .CodeMirror-info,
     body.graphiql-dark .CodeMirror-lint-tooltip,
-    body.graphiql-dark reach-portal {
+    body.graphiql-dark .graphiql-dialog,
+    body.graphiql-dark .graphiql-dialog-overlay,
+    body.graphiql-dark .graphiql-tooltip,
+    body.graphiql-dark [data-radix-popper-content-wrapper] {
       --color-primary: 338, 100%, 67%;
       --color-secondary: 243, 100%, 77%;
       --color-tertiary: 188, 100%, 44%;
@@ -455,8 +467,14 @@
       --popover-border: 1px solid hsl(var(--color-neutral))
     }
 
-    :is(.graphiql-container, .CodeMirror-info, .CodeMirror-lint-tooltip, reach-portal),
-    :is(.graphiql-container, .CodeMirror-info, .CodeMirror-lint-tooltip, reach-portal):is(button) {
+    .graphiql-container,
+    .CodeMirror-info,
+    .CodeMirror-lint-tooltip,
+    .graphiql-dialog,
+    .graphiql-container:is(button),
+    .CodeMirror-info:is(button),
+    .CodeMirror-lint-tooltip:is(button),
+    .graphiql-dialog:is(button) {
       color: hsla(var(--color-neutral), 1);
       font-family: var(--font-family);
       font-size: var(--font-size-body);
@@ -464,21 +482,33 @@
       line-height: var(--line-height)
     }
 
-    :is(.graphiql-container, .CodeMirror-info, .CodeMirror-lint-tooltip, reach-portal) input {
+    .graphiql-container input,
+    .CodeMirror-info input,
+    .CodeMirror-lint-tooltip input,
+    .graphiql-dialog input {
       color: hsla(var(--color-neutral), 1);
       font-family: var(--font-family);
       font-size: var(--font-size-caption)
     }
 
-    :is(.graphiql-container, .CodeMirror-info, .CodeMirror-lint-tooltip, reach-portal) input::placeholder {
+    .graphiql-container input::placeholder,
+    .CodeMirror-info input::placeholder,
+    .CodeMirror-lint-tooltip input::placeholder,
+    .graphiql-dialog input::placeholder {
       color: hsla(var(--color-neutral), var(--alpha-secondary))
     }
 
-    :is(.graphiql-container, .CodeMirror-info, .CodeMirror-lint-tooltip, reach-portal) a {
+    .graphiql-container a,
+    .CodeMirror-info a,
+    .CodeMirror-lint-tooltip a,
+    .graphiql-dialog a {
       color: hsl(var(--color-primary))
     }
 
-    :is(.graphiql-container, .CodeMirror-info, .CodeMirror-lint-tooltip, reach-portal) a:focus {
+    .graphiql-container a:focus,
+    .CodeMirror-info a:focus,
+    .CodeMirror-lint-tooltip a:focus,
+    .graphiql-dialog a:focus {
       outline: hsl(var(--color-primary)) auto 1px
     }
 
@@ -553,37 +583,17 @@
       margin-left: var(--px-8)
     }
 
-    :root {
-      --reach-dialog: 1
-    }
-
-    [data-reach-dialog-overlay] {
-      background: #00000054;
+    .graphiql-dialog-overlay {
       position: fixed;
       top: 0;
       right: 0;
       bottom: 0;
       left: 0;
-      overflow: auto
-    }
-
-    [data-reach-dialog-content] {
-      width: 50vw;
-      margin: 10vh auto;
-      background: #fff;
-      padding: 2rem;
-      outline: none
-    }
-
-    [data-reach-dialog-overlay] {
-      align-items: center;
       background-color: hsla(var(--color-neutral), var(--alpha-background-heavy));
-      display: flex;
-      justify-content: center;
       z-index: 10
     }
 
-    [data-reach-dialog-content] {
+    .graphiql-dialog {
       background-color: hsl(var(--color-base));
       border: var(--popover-border);
       border-radius: var(--border-radius-12);
@@ -593,7 +603,12 @@
       max-width: 80vw;
       overflow: auto;
       padding: 0;
-      width: unset
+      width: unset;
+      transform: translate(-50%, -50%);
+      top: 50%;
+      left: 50%;
+      position: fixed;
+      z-index: 10
     }
 
     .graphiql-dialog-close>svg {
@@ -604,216 +619,42 @@
       width: var(--px-12)
     }
 
-    :root {
-      --reach-listbox: 1
-    }
-
-    [data-reach-listbox-popover] {
-      display: block;
-      position: absolute;
-      min-width: -moz-fit-content;
-      min-width: -webkit-min-content;
-      min-width: min-content;
-      padding: .25rem 0;
-      background: #fff;
-      outline: none;
-      border: solid 1px hsla(0, 0%, 0%, .25)
-    }
-
-    [data-reach-listbox-popover]:focus-within {
-      box-shadow: 0 0 4px Highlight;
-      outline: -webkit-focus-ring-color auto 4px
-    }
-
-    [data-reach-listbox-popover][hidden] {
-      display: none
-    }
-
-    [data-reach-listbox-list] {
-      margin: 0;
-      padding: 0;
-      list-style: none
-    }
-
-    [data-reach-listbox-list]:focus {
-      box-shadow: none;
-      outline: none
-    }
-
-    [data-reach-listbox-option] {
-      display: block;
-      margin: 0;
-      padding: .25rem .5rem;
-      white-space: nowrap;
-      -webkit-user-select: none;
-      user-select: none
-    }
-
-    [data-reach-listbox-option][data-current-nav] {
-      background: #1672d4;
-      color: #fff
-    }
-
-    [data-reach-listbox-option][data-current-selected] {
-      font-weight: bolder
-    }
-
-    [data-reach-listbox-option][data-current-selected][data-confirming] {
-      animation: flash .1s;
-      animation-iteration-count: 1
-    }
-
-    [data-reach-listbox-option][aria-disabled=true] {
-      opacity: .5
-    }
-
-    [data-reach-listbox-button] {
-      display: inline-flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1px 10px 2px;
-      border: 1px solid;
-      border-color: rgb(216, 216, 216) rgb(209, 209, 209) rgb(186, 186, 186);
-      cursor: default;
-      -webkit-user-select: none;
-      user-select: none
-    }
-
-    [data-reach-listbox-button][aria-disabled=true] {
-      opacity: .5
-    }
-
-    [data-reach-listbox-arrow] {
-      margin-left: .5rem;
-      display: block;
-      font-size: .5em
-    }
-
-    [data-reach-listbox-group-label] {
-      display: block;
-      margin: 0;
-      padding: .25rem .5rem;
-      white-space: nowrap;
-      -webkit-user-select: none;
-      user-select: none;
-      font-weight: bolder
-    }
-
-    @keyframes flash {
-      0% {
-        background: #1159a6;
-        color: #fff;
-        opacity: 1
-      }
-
-      50% {
-        opacity: .5;
-        background: inherit;
-        color: inherit
-      }
-
-      to {
-        background: #1159a6;
-        color: #fff;
-        opacity: 1
-      }
-    }
-
-    :root {
-      --reach-menu-button: 1
-    }
-
-    [data-reach-menu] {
-      position: relative
-    }
-
-    [data-reach-menu-popover] {
-      display: block;
-      position: absolute
-    }
-
-    [data-reach-menu-popover][hidden] {
-      display: none
-    }
-
-    [data-reach-menu-list],
-    [data-reach-menu-items] {
-      display: block;
-      white-space: nowrap;
-      border: solid 1px hsla(0, 0%, 0%, .25);
-      background: #fffffffc;
-      outline: none;
-      padding: 1rem 0;
-      font-size: 85%
-    }
-
-    [data-reach-menu-item] {
-      display: block;
-      -webkit-user-select: none;
-      user-select: none
-    }
-
-    [data-reach-menu-item] {
-      cursor: pointer;
-      display: block;
-      color: inherit;
-      font: inherit;
-      text-decoration: initial;
-      padding: 5px 20px
-    }
-
-    [data-reach-menu-item][data-selected] {
-      background: #1159a6;
-      color: #fff;
-      outline: none
-    }
-
-    [data-reach-menu-item][aria-disabled] {
-      opacity: .5;
-      cursor: not-allowed
-    }
-
-    [data-reach-listbox-popover],
-    [data-reach-menu-list] {
+    .graphiql-dropdown-content {
       background-color: hsl(var(--color-base));
       border: var(--popover-border);
       border-radius: var(--border-radius-8);
       box-shadow: var(--popover-box-shadow);
       font-size: inherit;
       max-width: 250px;
-      padding: var(--px-4)
+      padding: var(--px-4);
+      font-family: var(--font-family);
+      color: hsl(var(--color-neutral));
+      max-height: min(calc(var(--radix-dropdown-menu-content-available-height) - 10px), 400px);
+      overflow-y: scroll
     }
 
-    [data-reach-listbox-option],
-    [data-reach-menu-item] {
+    .graphiql-dropdown-item {
       border-radius: var(--border-radius-4);
       font-size: inherit;
       margin: var(--px-4);
       overflow: hidden;
       padding: var(--px-6) var(--px-8);
       text-overflow: ellipsis;
-      white-space: nowrap
+      white-space: nowrap;
+      outline: none;
+      cursor: pointer;
+      line-height: var(--line-height)
     }
 
-    [data-reach-listbox-option][data-selected],
-    [data-reach-menu-item][data-selected],
-    [data-reach-listbox-option][data-current-nav],
-    [data-reach-menu-item][data-current-nav],
-    [data-reach-listbox-option]:hover,
-    [data-reach-menu-item]:hover {
+    .graphiql-dropdown-item[data-selected],
+    .graphiql-dropdown-item[data-current-nav],
+    .graphiql-dropdown-item:hover {
       background-color: hsla(var(--color-neutral), var(--alpha-background-light));
       color: inherit
     }
 
-    [data-reach-listbox-option]:not(:first-child),
-    [data-reach-menu-item]:not(:first-child) {
+    .graphiql-dropdown-item:not(:first-child) {
       margin-top: 0
-    }
-
-    [data-reach-listbox-button] {
-      border: none;
-      cursor: pointer;
-      padding: 0
     }
 
     :is(.graphiql-markdown-description, .graphiql-markdown-deprecation, .CodeMirror-hint-information-description, .CodeMirror-hint-information-deprecation-reason, .CodeMirror-info .info-description, .CodeMirror-info .info-deprecation) blockquote {
@@ -966,35 +807,20 @@
       }
     }
 
-    :root {
-      --reach-tooltip: 1
-    }
-
-    [data-reach-tooltip] {
-      z-index: 1;
-      pointer-events: none;
-      position: absolute;
-      padding: .25em .5em;
-      box-shadow: 2px 2px 10px #0000001a;
-      white-space: nowrap;
-      font-size: 85%;
-      background: #f0f0f0;
-      color: #444;
-      border: solid 1px #ccc
-    }
-
-    [data-reach-tooltip] {
+    .graphiql-tooltip {
       background: hsl(var(--color-base));
       border: var(--popover-border);
       border-radius: var(--border-radius-4);
       box-shadow: var(--popover-box-shadow);
       color: hsl(var(--color-neutral));
       font-size: inherit;
-      padding: var(--px-4) var(--px-6)
+      padding: var(--px-4) var(--px-6);
+      font-family: var(--font-family)
     }
 
     .graphiql-tabs {
       display: flex;
+      align-items: center;
       overflow-x: auto;
       padding: var(--px-12)
     }
@@ -1042,7 +868,15 @@
 
     .graphiql-history-header {
       font-size: var(--font-size-h2);
-      font-weight: var(--font-weight-medium)
+      font-weight: var(--font-weight-medium);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .graphiql-history-header button {
+      font-size: var(--font-size-inline-code);
+      padding: var(--px-6) var(--px-10)
     }
 
     .graphiql-history-items {
@@ -1214,61 +1048,19 @@
       color: hsl(var(--color-info))
     }
 
-    :root {
-      --reach-combobox: 1
-    }
-
-    [data-reach-combobox-popover] {
-      border: solid 1px hsla(0, 0%, 0%, .25);
-      background: #fffffffc;
-      font-size: 85%
-    }
-
-    [data-reach-combobox-list] {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      -webkit-user-select: none;
-      user-select: none
-    }
-
-    [data-reach-combobox-option] {
-      cursor: pointer;
-      margin: 0;
-      padding: .25rem .5rem
-    }
-
-    [data-reach-combobox-option][aria-selected=true] {
-      background: #f1f2f4
-    }
-
-    [data-reach-combobox-option]:hover {
-      background: #e9ebed
-    }
-
-    [data-reach-combobox-option][aria-selected=true]:hover {
-      background: #e3e5e8
-    }
-
-    [data-suggested-value] {
-      font-weight: 700
-    }
-
-    [data-reach-combobox] {
+    .graphiql-doc-explorer-search {
       color: hsla(var(--color-neutral), var(--alpha-secondary))
     }
 
-    [data-reach-combobox]:not([data-state=idle]) {
+    .graphiql-doc-explorer-search:not([data-state=idle]) {
       border: var(--popover-border);
       border-radius: var(--border-radius-4);
       box-shadow: var(--popover-box-shadow);
       color: hsla(var(--color-neutral), 1)
     }
 
-    [data-reach-combobox]:not([data-state=idle]) .graphiql-doc-explorer-search-input {
-      background: hsl(var(--color-base));
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0
+    .graphiql-doc-explorer-search:not([data-state=idle]) .graphiql-doc-explorer-search-input {
+      background: hsl(var(--color-base))
     }
 
     .graphiql-doc-explorer-search-input {
@@ -1279,18 +1071,18 @@
       padding: var(--px-8) var(--px-12)
     }
 
-    [data-reach-combobox-input] {
+    .graphiql-doc-explorer-search [role=combobox] {
       border: none;
       background-color: transparent;
       margin-left: var(--px-4);
       width: 100%
     }
 
-    [data-reach-combobox-input]:focus {
+    .graphiql-doc-explorer-search [role=combobox]:focus {
       outline: none
     }
 
-    [data-reach-combobox-popover] {
+    .graphiql-doc-explorer-search [role=listbox] {
       background-color: hsl(var(--color-base));
       border: none;
       border-bottom-left-radius: var(--border-radius-4);
@@ -1298,36 +1090,35 @@
       border-top: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
       max-height: 400px;
       overflow-y: auto;
+      margin: 0;
+      font-size: var(--font-size-body);
+      padding: var(--px-4);
       position: relative
     }
 
-    [data-reach-combobox-list] {
-      font-size: var(--font-size-body);
-      padding: var(--px-4)
-    }
-
-    [data-reach-combobox-option] {
+    .graphiql-doc-explorer-search [role=option] {
       border-radius: var(--border-radius-4);
       color: hsla(var(--color-neutral), var(--alpha-secondary));
       overflow-x: hidden;
       padding: var(--px-8) var(--px-12);
       text-overflow: ellipsis;
-      white-space: nowrap
+      white-space: nowrap;
+      cursor: pointer
     }
 
-    [data-reach-combobox-option][data-highlighted] {
+    .graphiql-doc-explorer-search [role=option][data-headlessui-state=active] {
       background-color: hsla(var(--color-neutral), var(--alpha-background-light))
     }
 
-    [data-reach-combobox-option]:hover {
+    .graphiql-doc-explorer-search [role=option]:hover {
       background-color: hsla(var(--color-neutral), var(--alpha-background-medium))
     }
 
-    [data-reach-combobox-option][data-highlighted]:hover {
+    .graphiql-doc-explorer-search [role=option][data-headlessui-state=active]:hover {
       background-color: hsla(var(--color-neutral), var(--alpha-background-heavy))
     }
 
-    [data-reach-combobox-option]+[data-reach-combobox-option] {
+    :is(.graphiql-doc-explorer-search [role=option])+:is(.graphiql-doc-explorer-search [role=option]) {
       margin-top: var(--px-4)
     }
 
@@ -1402,7 +1193,6 @@
     }
 
     .graphiql-doc-explorer-search {
-      height: 100%;
       position: absolute;
       right: 0;
       top: 0
@@ -1412,12 +1202,12 @@
       left: 0
     }
 
-    .graphiql-doc-explorer-search [data-reach-combobox-input] {
+    .graphiql-doc-explorer-search [role=combobox] {
       height: 24px;
       width: 4ch
     }
 
-    .graphiql-doc-explorer-search [data-reach-combobox-input]:focus {
+    .graphiql-doc-explorer-search [role=combobox]:focus {
       width: 100%
     }
 
@@ -2480,6 +2270,37 @@
       }
     }
 
+    .graphiql-increments-editors {
+      display: flex;
+      flex-direction: column;
+      padding: var(--px-16)
+    }
+
+    .graphiql-increment-editor {
+      padding: var(--px-4) 0;
+      display: flex;
+      flex-direction: column;
+      position: relative
+    }
+
+    .graphiql-increment-editor+.graphiql-increment-editor {
+      border-top: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy))
+    }
+
+    .graphiql-increment-editor-toggle,
+    button.graphiql-increment-editor-toggle {
+      padding: var(--px-2) var(--px-4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .graphiql-increment-editor-chevron {
+      height: var(--px-12);
+      width: var(--px-12);
+      margin-left: var(--px-4)
+    }
+
     button.graphiql-toolbar-button {
       display: flex;
       align-items: center;
@@ -2526,7 +2347,6 @@
       width: var(--px-16)
     }
 
-    .graphiql-toolbar-listbox,
     button.graphiql-toolbar-menu {
       display: block;
       height: var(--toolbar-width);
@@ -2534,8 +2354,8 @@
     }
 
     /*!*********************************************************************************************************************!*\
-      !*** css ../../../node_modules/css-loader/dist/cjs.js!../../../node_modules/postcss-loader/dist/cjs.js!./style.css ***!
-      \*********************************************************************************************************************/
+    !*** css ../../../node_modules/css-loader/dist/cjs.js!../../../node_modules/postcss-loader/dist/cjs.js!./style.css ***!
+    \*********************************************************************************************************************/
     .graphiql-container {
       background-color: hsl(var(--color-base));
       display: flex;
@@ -2608,7 +2428,7 @@
 
     button.graphiql-tab-add {
       height: 100%;
-      padding: 0 var(--px-4)
+      padding: var(--px-4)
     }
 
     button.graphiql-tab-add>svg {
@@ -2618,12 +2438,8 @@
       width: var(--px-16)
     }
 
-    .graphiql-add-tab-wrapper {
-      padding: var(--px-12) 0
-    }
-
     .graphiql-container .graphiql-session-header-right {
-      align-items: stretch;
+      align-items: center;
       display: flex
     }
 
@@ -2659,19 +2475,13 @@
     }
 
     .graphiql-container .graphiql-query-editor {
-      border-bottom: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
+      padding: var(--px-16);
+      column-gap: var(--px-16);
       display: flex;
-      flex: 1;
-      padding: var(--px-16)
-    }
-
-    .graphiql-container .graphiql-query-editor-wrapper {
-      display: flex;
-      flex: 1
+      width: 100%
     }
 
     .graphiql-container .graphiql-toolbar {
-      margin-left: var(--px-16);
       width: var(--toolbar-width)
     }
 
@@ -2687,10 +2497,11 @@
     }
 
     .graphiql-container .graphiql-editor-tools {
-      align-items: center;
+      border-top: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
       cursor: row-resize;
       display: flex;
-      justify-content: space-between;
+      width: 100%;
+      column-gap: var(--px-8);
       padding: var(--px-8)
     }
 
@@ -2702,17 +2513,13 @@
       color: hsla(var(--color-neutral), 1)
     }
 
-    .graphiql-container .graphiql-editor-tools-tabs {
-      cursor: auto;
-      display: flex
+    .graphiql-container .graphiql-editor-tools>button:not(.graphiql-toggle-editor-tools) {
+      padding-left: var(--px-12);
+      padding-right: var(--px-12)
     }
 
-    .graphiql-container .graphiql-editor-tools-tabs>button {
-      padding: var(--px-8) var(--px-12)
-    }
-
-    .graphiql-container .graphiql-editor-tools-tabs>button+button {
-      margin-left: var(--px-8)
+    .graphiql-container .graphiql-editor-tools .graphiql-toggle-editor-tools {
+      margin-left: auto
     }
 
     .graphiql-container .graphiql-editor-tool {
@@ -2729,9 +2536,8 @@
     .graphiql-container .graphiql-response {
       --editor-background: transparent;
       display: flex;
-      flex: 1;
-      flex-direction: column;
-      position: relative
+      width: 100%;
+      flex-direction: column
     }
 
     .graphiql-container .graphiql-response .result-window {
@@ -2750,12 +2556,12 @@
       padding: var(--px-16)
     }
 
-    .graphiql-container .graphiql-horizontal-drag-bar {
+    .graphiql-horizontal-drag-bar {
       width: var(--px-12);
       cursor: col-resize
     }
 
-    .graphiql-container .graphiql-horizontal-drag-bar:hover:after {
+    .graphiql-horizontal-drag-bar:hover:after {
       border: var(--px-2) solid hsla(var(--color-neutral), var(--alpha-background-heavy));
       border-radius: var(--border-radius-2);
       content: "";
@@ -2789,19 +2595,20 @@
       }
     }
 
-    reach-portal .graphiql-dialog-header {
+    .graphiql-dialog .graphiql-dialog-header {
       align-items: center;
       display: flex;
       justify-content: space-between;
       padding: var(--px-24)
     }
 
-    reach-portal .graphiql-dialog-title {
+    .graphiql-dialog .graphiql-dialog-title {
       font-size: var(--font-size-h3);
-      font-weight: var(--font-weight-medium)
+      font-weight: var(--font-weight-medium);
+      margin: 0
     }
 
-    reach-portal .graphiql-dialog-section {
+    .graphiql-dialog .graphiql-dialog-section {
       align-items: center;
       border-top: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
       display: flex;
@@ -2809,35 +2616,35 @@
       padding: var(--px-24)
     }
 
-    reach-portal .graphiql-dialog-section>:not(:first-child) {
+    .graphiql-dialog .graphiql-dialog-section>:not(:first-child) {
       margin-left: var(--px-24)
     }
 
-    reach-portal .graphiql-dialog-section-title {
+    .graphiql-dialog .graphiql-dialog-section-title {
       font-size: var(--font-size-h4);
       font-weight: var(--font-weight-medium)
     }
 
-    reach-portal .graphiql-dialog-section-caption {
+    .graphiql-dialog .graphiql-dialog-section-caption {
       color: hsla(var(--color-neutral), var(--alpha-secondary))
     }
 
-    reach-portal .graphiql-warning-text {
+    .graphiql-dialog .graphiql-warning-text {
       color: hsl(var(--color-warning));
       font-weight: var(--font-weight-medium)
     }
 
-    reach-portal .graphiql-table {
+    .graphiql-dialog .graphiql-table {
       border-collapse: collapse;
       width: 100%
     }
 
-    reach-portal .graphiql-table :is(th, td) {
+    .graphiql-dialog .graphiql-table :is(th, td) {
       border: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
       padding: var(--px-8) var(--px-12)
     }
 
-    reach-portal .graphiql-key {
+    .graphiql-dialog .graphiql-key {
       background-color: hsla(var(--color-neutral), var(--alpha-background-medium));
       border-radius: var(--border-radius-4);
       padding: var(--px-4)
@@ -2845,6 +2652,21 @@
 
     .graphiql-container svg {
       pointer-events: none
+    }
+
+    .graphiql-incremental-payloads-toggle {
+      border-top: 1px solid hsla(var(--color-neutral), var(--alpha-background-heavy));
+      padding: var(--px-8);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: row-resize
+    }
+
+    .graphiql-incremental-payloads {
+      overflow-y: auto;
+      flex-direction: column;
+      flex-basis: 0px !important
     }
 
     body {
@@ -3119,8 +2941,11 @@
     .graphiql-secondary {
       color: hsla(var(--color-neutral), var(--alpha-secondary))
     }
-  </style>
 
+    .flex-grow {
+      flex-grow: 1
+    }
+  </style>
   <script>
     document.title = "TechGyan Entity API Playground"
     window.GRAPHIQL_DATA = { "text": "query {\n  \n}\n", "serviceName": "TechGyan Entity" }

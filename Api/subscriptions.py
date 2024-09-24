@@ -12,8 +12,7 @@ class MySubscription(channels_graphql_ws.Subscription):
 
     class Arguments:
         """That is how subscription arguments are defined."""
-        arg1 = graphene.String()
-        arg2 = graphene.String()
+        pass
 
     @staticmethod
     def subscribe(root, info):

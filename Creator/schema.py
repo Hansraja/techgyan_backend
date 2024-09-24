@@ -5,8 +5,9 @@ from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from User.schema import UserType
 from Api import relay
-from Common.schema import SocialLinkInput, ImageInput
+from Common.types import SocialLinkInput, ImageInput
 from Creator.models import Creator as CreatorModel
+from User.Utils.tools import ImageHandler
 
 class CreatorInput(graphene.InputObjectType):
     name = graphene.String()
@@ -74,9 +75,9 @@ class UpdateCreator(graphene.Mutation):
         if data.contact_email: creator.contact_email = data.contact_email
         if data.handle: creator.handle = data.handle
         if data.image:
-            print(data.image)
-            pass
-        # banner
+            creator.image = ImageHandler(data.image).auto_image()
+        if data.banner:
+            creator.banner = ImageHandler(data.banner).auto_image()
         creator.save()
         return UpdateCreator(creator=creator)
 
