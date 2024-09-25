@@ -42,7 +42,8 @@ AUTH_USER_MODEL = 'User.User'
 
 GRAPHENE = {
     "SCHEMA": "Api.schema.schema",
-    "SUBSCRIPTION_PATH": "/api/"
+    "SUBSCRIPTION_PATH": "/api/",
+    
 }
 
 CHANNEL_LAYERS = {

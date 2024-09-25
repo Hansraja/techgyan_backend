@@ -15,14 +15,16 @@ class PrivacyEnum(graphene.Enum):
     UNLISTED = 'unlisted'
 
 class BaseContentInput():
-    title = graphene.String()
-    content = graphene.String()
+    '''Base Input for Content'''
     tags = graphene.List(graphene.String)
     state = StateEnum()
     privacy = PrivacyEnum()
 
 
-class StoryUpdateInput(graphene.InputObjectType, BaseContentInput):
+class StoryUpdateInput(graphene.InputObjectType, BaseContentInput): 
+    '''Input for Updating a Story'''
+    title = graphene.String()
+    content = graphene.String()
     slug = graphene.String()
     description = graphene.String()
     image = ImageInput()
@@ -32,25 +34,26 @@ class StoryUpdateInput(graphene.InputObjectType, BaseContentInput):
 
 '''****************** POST TYPES ******************'''
 
-class PollTypeEnum(graphene.Enum):
-    '''Type of Poll'''
+class PostTypeEnum(graphene.Enum):
+    '''Type of Post'''
     TEXT = 'text'
+    POLL = 'poll'
     IMAGE = 'image'
-
-class PostPollInput(graphene.InputObjectType):
-    question = graphene.String()
-    options = graphene.List(graphene.String)
-    correct_option = graphene.Int()
-    explanation = graphene.String()
 
 class PostImageInput(graphene.InputObjectType):
     image = graphene.List(ImageInput)
     caption = graphene.String()
 
-class PostContent(graphene.Union):
-    class Meta:
-        types = (PostPollInput, PostImageInput)
-
 class PostInput(graphene.InputObjectType, BaseContentInput):
-    type_of = PollTypeEnum()
-    type_of_content = graphene.String()
+    type_of = PostTypeEnum(required=True)
+    type_of_id = graphene.String(description='Type of Content Identifier')
+    text = graphene.String()
+
+class PostPollOptionInput(graphene.InputObjectType):
+    id = graphene.Int()
+    text = graphene.String()
+
+class PostPollOptionObject(graphene.ObjectType):
+    id = graphene.Int()
+    text = graphene.String()
+    votes = graphene.Int()

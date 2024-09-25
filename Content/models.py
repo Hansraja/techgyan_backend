@@ -121,8 +121,7 @@ class StoryCommentVote(models.Model):
 
 class Post(models.Model):
     key = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    title = models.CharField(max_length=255)
-    content = models.TextField(blank=True, null=True)
+    text = models.TextField(blank=True, null=True)
     type_of = models.CharField(max_length=20, default='text', choices=[
         ('text', 'Text'),
         ('image', 'Image'),
@@ -131,7 +130,8 @@ class Post(models.Model):
         ('poll', 'Poll'),
         ('event', 'Event')
     ])
-    type_of_id = models.CharField(max_length=50, null=True, blank=True)
+    type_poll = models.OneToOneField('PostPoll', on_delete=models.CASCADE, null=True, blank=True)
+    type_image = models.OneToOneField('PostImage', on_delete=models.CASCADE, null=True, blank=True)
     author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE)
     state = models.CharField(max_length=20, default='published', choices=[
         ('draft', 'Draft'),
@@ -158,11 +158,11 @@ class Post(models.Model):
         verbose_name_plural = 'posts'
     
     def __str__(self):
-        return self.title
+        return self.key
     
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.id = generate(size=30)
+            self.key = generate(size=30)
         super().save(*args, **kwargs)
         return self
     
@@ -244,7 +244,6 @@ class PostCommentVote(models.Model):
 
 class PostPoll(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     question = models.CharField(max_length=255)
     options = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -264,12 +263,29 @@ class PostPoll(models.Model):
         super().save(*args, **kwargs)
         return self
     
+    def option_by_id(self, option_id):
+        for option in self.options:
+            if option['id'] == option_id:
+                return option
+        return None
+    
+    def get_votes(self):
+        votes = PostPollVote.objects.filter(poll=self)
+        count = votes.count()
+        return votes, count
+    
+    def user_vote(self, user):
+        votes = PostPollVote.objects.filter(poll=self, user=user)
+        user_vote_id = votes.first().option if votes.exists() else None
+        return user_vote_id
+
+    
 
 class PostPollVote(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
     poll = models.ForeignKey('PostPoll', on_delete=models.CASCADE)
     user = models.ForeignKey('User.User', on_delete=models.CASCADE)
-    option = models.CharField(max_length=255)
+    option = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -290,7 +306,6 @@ class PostPollVote(models.Model):
 
 class PostEvent(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     location = models.CharField(max_length=255)
@@ -360,10 +375,10 @@ class PostEventSpeaker(models.Model):
 
 class PostImage(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     caption = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    images = models.ManyToManyField('Common.Image', through='PostImageObj')
     
     class Meta:
         db_table = 'post_images'
@@ -379,16 +394,16 @@ class PostImage(models.Model):
         super().save(*args, **kwargs)
         return self
     
+
 class PostImageObj(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    to_image = models.ForeignKey('PostImage', on_delete=models.CASCADE)
+    post_image = models.ForeignKey('PostImage', on_delete=models.CASCADE)
     image = models.ForeignKey('Common.Image', on_delete=models.CASCADE)
-    caption = models.CharField(max_length=255, null=True, blank=True)
     
     class Meta:
         db_table = 'post_image_objs'
-        verbose_name = 'post image obj'
-        verbose_name_plural = 'post image objs'
+        verbose_name = 'post image object'
+        verbose_name_plural = 'post image objects'
     
     def __str__(self):
         return self.id
