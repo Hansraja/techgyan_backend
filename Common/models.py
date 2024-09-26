@@ -26,6 +26,9 @@ class Image(models.Model):
         super().save(*args, **kwargs)
         return self
     
+    def get_url(self):
+        return self.url
+    
 class Tag(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
     name = models.CharField(max_length=255)

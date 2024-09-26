@@ -6,7 +6,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from Api import relay
 from Common.types import ImageInput
 from User.Utils.tools import ImageHandler
-
+from User.types import LoginObject
 from .models import User
 
 class UserType(DjangoObjectType):
@@ -41,6 +41,23 @@ class UserNode(DjangoObjectType):
     # @classmethod
     # def get_node(cls, info, id):
     #     return User.objects.get(pk=id)
+
+class LoginUser(graphene.Mutation):
+    class Arguments:
+        email = String()
+        password = String()
+
+    user = Field(LoginObject)
+    session_id = String()
+    success = Boolean()
+
+    def mutate(self, info, email=None, password=None):
+        from django.contrib.auth import authenticate, login
+        user = authenticate(email=email, password=password)
+        if user is None:
+            raise Exception('Invalid username or password')
+        login(info.context, user)
+        return LoginUser(user=user, session_id=info.context.session.session_key, success=True)
 
 class CreateUser(gRelay.ClientIDMutation):
     class Input:
@@ -97,11 +114,12 @@ class Mutation(ObjectType):
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
     delete_user = DeleteUser.Field()
+    login = LoginUser.Field()
 
 class Query(ObjectType):
     Users = DjangoFilterConnectionField(UserNode)
     User = Field(UserType, username=String(), key=String())
-    me = Field(UserType)
+    Me = Field(UserType)
 
     def resolve_User(self, info, username=None, key=None):
         if not username and not key:

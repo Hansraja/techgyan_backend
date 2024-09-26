@@ -91,7 +91,7 @@ class PostPollObject(DjangoObjectType):
     votes_count = graphene.Int()
 
     def resolve_options(self, info):
-        if info.context.user:
+        if info.context.user.is_authenticated:
             votes, count = self.get_votes()
             options = []
             for option in self.options:
@@ -104,7 +104,7 @@ class PostPollObject(DjangoObjectType):
         else: self.options
 
     def resolve_my_vote(self, info):
-        if info.context.user:
+        if info.context.user.is_authenticated:
             id = self.user_vote(info.context.user)
             return id
         return None
@@ -149,7 +149,7 @@ class CreateStory(graphene.Mutation):
     story = graphene.Field(StoryObject)
     
     def mutate(self, info, **args):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         author = Creator.objects.get(key=args.get('author_key'), user=user)
         if not user and author: raise KeyError('A valid Author is required.')
         story = Story(author=author, slug=args.get('slug', generate(size=60)), title=args.get('title', ''), content='')
@@ -164,7 +164,7 @@ class StoryClapAction(graphene.Mutation):
     clap = graphene.Field(StoryClapObject)
     
     def mutate(self, info, story_key):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to clap on a Story.')
         story = Story.objects.get(key=story_key)
         if not story: raise KeyError('Story not found.')
@@ -185,7 +185,7 @@ class UpdateStory(graphene.Mutation):
     story = graphene.Field(StoryObject)
     
     def mutate(self, info, key, data):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         story = Story.objects.get(key=key)
         if not user and story.author.user != user: raise KeyError('A valid Author is required.')
         story.title = data.get('title', story.title)
@@ -221,7 +221,7 @@ class CreateStoryComment(graphene.Mutation):
     comment = graphene.Field(StoryCommentObject)
     
     def mutate(self, info, story_key, text, parent_id=None, author_key=None):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to comment on a Story.')
         story = Story.objects.get(key=story_key)
         if not story: raise KeyError('Story not found.')
@@ -249,12 +249,13 @@ class UpdateStoryComment(graphene.Mutation):
     comment = graphene.Field(StoryCommentObject)
     
     def mutate(self, info, comment_id, text):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to update a Comment.')
         comment = StoryComment.objects.get(id=comment_id)
         if not comment: raise KeyError('Comment not found.')
         if comment.user != user: raise KeyError('You are not authorized to update this Comment.')   
         comment.content = text
+        comment.updated_at = datetime.now()
         comment.save()
         return UpdateStoryComment(comment=comment)
     
@@ -266,7 +267,7 @@ class StoryCommentVoteAction(graphene.Mutation):
     comment = graphene.Field(StoryCommentObject)
     
     def mutate(self, info, comment_id):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to vote on a Comment.')
         comment = StoryComment.objects.get(id=comment_id)
         if not comment: raise KeyError('Comment not found.')
@@ -287,7 +288,7 @@ class CreatePost(graphene.Mutation):
     post = graphene.Field(PostObject)
     
     def mutate(self, info, author_key, data):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         author = Creator.objects.get(key=author_key, user=user)
         if not user and author: raise KeyError('A valid Author is required.')
         type_of = data.type_of.value if data.get('type_of', None) else 'text'
@@ -325,7 +326,7 @@ class PostClapAction(graphene.Mutation):
     clap = graphene.Field(PostClapObject)
     
     def mutate(self, info, post_key):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to clap on a Post.')
         post = Post.objects.get(key=post_key)
         if not post: raise KeyError('Post not found.')
@@ -346,7 +347,7 @@ class CreatePostPoll(graphene.Mutation):
     poll = graphene.Field(PostPollObject)
     
     def mutate(self, info, question, options):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to create a Poll.')
         poll = PostPoll(
             question=question,
@@ -365,7 +366,7 @@ class VotePostPoll(graphene.Mutation):
     poll = graphene.Field(PostPollObject)
     
     def mutate(self, info, post_key, option_id):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user:
             raise KeyError('You are not authorized to vote on a Poll.')
         
@@ -399,7 +400,7 @@ class CreatePostImage(graphene.Mutation):
     post_image = graphene.Field(PostImageObject)
     
     def mutate(self, info, caption, images):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to create an Image Post.')
         post_image = PostImage(
             caption=caption,
@@ -421,7 +422,7 @@ class CreatePostComment(graphene.Mutation):
     comment = graphene.Field(PostCommentObject)
     
     def mutate(self, info, post_key, text, parent_id=None, author_key=None):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to comment on a Post.')
         post = Post.objects.get(key=post_key)
         if not post: raise KeyError('Post not found.')
@@ -449,12 +450,13 @@ class UpdatePostComment(graphene.Mutation):
     comment = graphene.Field(PostCommentObject)
     
     def mutate(self, info, comment_id, text):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to update a Comment.')
         comment = PostComment.objects.get(id=comment_id)
         if not comment: raise KeyError('Comment not found.')
         if comment.user != user: raise KeyError('You are not authorized to update this Comment.')   
         comment.content = text
+        comment.updated_at = datetime.now()
         comment.save()
         return UpdatePostComment(comment=comment)
 
@@ -466,7 +468,7 @@ class PostCommentVoteAction(graphene.Mutation):
     comment = graphene.Field(PostCommentObject)
     
     def mutate(self, info, comment_id):
-        user = info.context.user
+        user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to vote on a Comment.')
         comment = PostComment.objects.get(id=comment_id)
         if not comment: raise KeyError('Comment not found.')
