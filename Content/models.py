@@ -74,7 +74,7 @@ class StoryComment(models.Model):
     content = models.TextField()
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
     
@@ -91,6 +91,15 @@ class StoryComment(models.Model):
             self.id = generate(size=40)
         super().save(*args, **kwargs)
         return self
+    
+    def get_votes(self):
+        votes = StoryCommentVote.objects.filter(comment=self).count()
+        return votes
+    
+    def user_vote(self, user):
+        votes = StoryCommentVote.objects.filter(comment=self, user=user)
+        user_vote = votes.first().id if votes.exists() else None
+        return user_vote
     
 class StoryCommentVote(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
@@ -197,7 +206,7 @@ class PostComment(models.Model):
     content = models.TextField()
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
     

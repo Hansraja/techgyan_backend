@@ -1,7 +1,7 @@
 import graphene
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
-from Content.models import Story, Post, PostPoll, PostImage, PostPollVote
+from Content.models import Story, Post, PostPoll, PostImage, PostPollVote, StoryComment, StoryCommentVote, PostComment, PostCommentVote, StoryClap, PostClap
 from Api import relay
 from Creator.models import Creator
 from nanoid import generate
@@ -24,6 +24,35 @@ class StoryObject(DjangoObjectType):
         fields = '__all__'
         use_connection = True
 
+class StoryClapObject(DjangoObjectType):
+    class Meta:
+        model = StoryClap
+        interfaces = (relay.Node, )
+        filter_fields = {
+            'id': ['exact'],
+        }
+        fields = '__all__'
+        use_connection = True
+
+class StoryCommentObject(DjangoObjectType):
+    class Meta:
+        model = StoryComment
+        interfaces = (relay.Node, )
+        filter_fields = {
+            'content': ['exact', 'icontains'],
+            'id': ['exact'],
+        }
+        fields = '__all__'
+        use_connection = True
+
+    votes = graphene.Int()
+    my_vote = graphene.String()
+
+    def resolve_votes(self, info):
+        return self.get_votes()
+    
+    def resolve_my_vote(self, info):
+        return self.user_vote(info.context.user)
 
 class PostObject(DjangoObjectType):
     class Meta:
@@ -32,6 +61,16 @@ class PostObject(DjangoObjectType):
         filter_fields = {
             'text': ['exact', 'icontains'],
             'key': ['exact'],
+        }
+        fields = '__all__'
+        use_connection = True
+
+class PostClapObject(DjangoObjectType):
+    class Meta:
+        model = PostClap
+        interfaces = (relay.Node, )
+        filter_fields = {
+            'id': ['exact'],
         }
         fields = '__all__'
         use_connection = True
@@ -86,6 +125,17 @@ class PostImageObject(DjangoObjectType):
         fields = '__all__'
         use_connection = True
 
+class PostCommentObject(DjangoObjectType):
+    class Meta:
+        model = PostComment
+        interfaces = (relay.Node, )
+        filter_fields = {
+            'content': ['exact', 'icontains'],
+            'id': ['exact'],
+        }
+        fields = '__all__'
+        use_connection = True
+
 
 '''****************** MUTATIONS TYPES ******************'''
 
@@ -105,6 +155,26 @@ class CreateStory(graphene.Mutation):
         story = Story(author=author, slug=args.get('slug', generate(size=60)), title=args.get('title', ''), content='')
         story.save()
         return CreateStory(story=story)
+
+class StoryClapAction(graphene.Mutation):
+    '''Clap on a Story'''
+    class Input():
+        story_key = graphene.String(required=True)
+
+    clap = graphene.Field(StoryClapObject)
+    
+    def mutate(self, info, story_key):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to clap on a Story.')
+        story = Story.objects.get(key=story_key)
+        if not story: raise KeyError('Story not found.')
+        clap = StoryClap.objects.filter(user=user, story=story)
+        if clap.exists():
+            clap.delete()
+            return StoryClapAction(clap=None)
+        clap = StoryClap(user=user, story=story)
+        clap.save()
+        return StoryClapAction(clap=clap)
     
 class UpdateStory(graphene.Mutation):
     '''Update an existing Story'''
@@ -139,6 +209,74 @@ class UpdateStory(graphene.Mutation):
             story.category = category
         story.save()
         return UpdateStory(story=story)
+    
+class CreateStoryComment(graphene.Mutation):
+    '''Create a new Comment on a Story'''
+    class Input():
+        story_key = graphene.String(required=True)
+        text = graphene.String(required=True)
+        parent_id = graphene.String()
+        author_key = graphene.String()
+
+    comment = graphene.Field(StoryCommentObject)
+    
+    def mutate(self, info, story_key, text, parent_id=None, author_key=None):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to comment on a Story.')
+        story = Story.objects.get(key=story_key)
+        if not story: raise KeyError('Story not found.')
+        author = None
+        if author_key:
+            author = Creator.objects.get(key=author_key, user=user)
+            if not author: raise KeyError('Author not found.')
+        parent = StoryComment.objects.get(id=parent_id) if parent_id else None
+        comment = StoryComment(
+            user = user,
+            story=story,
+            content=text,
+            author=author,
+            parent=parent,
+        )
+        comment.save()
+        return CreateStoryComment(comment=comment)
+    
+class UpdateStoryComment(graphene.Mutation):    
+    '''Update an existing Comment on a Story'''
+    class Input():
+        comment_id = graphene.String(required=True)
+        text = graphene.String(required=True)
+
+    comment = graphene.Field(StoryCommentObject)
+    
+    def mutate(self, info, comment_id, text):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to update a Comment.')
+        comment = StoryComment.objects.get(id=comment_id)
+        if not comment: raise KeyError('Comment not found.')
+        if comment.user != user: raise KeyError('You are not authorized to update this Comment.')   
+        comment.content = text
+        comment.save()
+        return UpdateStoryComment(comment=comment)
+    
+class StoryCommentVoteAction(graphene.Mutation):
+    '''Vote on a Comment'''
+    class Input():
+        comment_id = graphene.String(required=True)
+
+    comment = graphene.Field(StoryCommentObject)
+    
+    def mutate(self, info, comment_id):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to vote on a Comment.')
+        comment = StoryComment.objects.get(id=comment_id)
+        if not comment: raise KeyError('Comment not found.')
+        vote = StoryCommentVote.objects.filter(user=user, comment=comment)
+        if vote.exists():
+            vote.delete()
+        else:
+            vote = StoryCommentVote(user=user, comment=comment)
+            vote.save()
+        return StoryCommentVoteAction(comment=comment)
     
 class CreatePost(graphene.Mutation):
     '''Create a new Post'''
@@ -178,6 +316,26 @@ class CreatePost(graphene.Mutation):
                 post.type_image = image
         post.save()
         return CreatePost(post=post)
+    
+class PostClapAction(graphene.Mutation):
+    '''Clap on a Post'''
+    class Input():
+        post_key = graphene.String(required=True)
+
+    clap = graphene.Field(PostClapObject)
+    
+    def mutate(self, info, post_key):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to clap on a Post.')
+        post = Post.objects.get(key=post_key)
+        if not post: raise KeyError('Post not found.')
+        clap = PostClap.objects.filter(user=user, post=post)
+        if clap.exists():
+            clap.delete()
+            return PostClapAction(clap=None)
+        clap = PostClap(user=user, post=post)
+        clap.save()
+        return PostClapAction(clap=clap)
     
 class CreatePostPoll(graphene.Mutation):
     '''Create a new Poll Post'''
@@ -251,6 +409,74 @@ class CreatePostImage(graphene.Mutation):
             if image: post_image.images.add(image)
         post_image.save()
         return CreatePostImage(post_image=post_image)
+    
+class CreatePostComment(graphene.Mutation):
+    '''Create a new Comment on a Post'''
+    class Input():
+        post_key = graphene.String(required=True)
+        text = graphene.String(required=True)
+        parent_id = graphene.String()
+        author_key = graphene.String()
+
+    comment = graphene.Field(PostCommentObject)
+    
+    def mutate(self, info, post_key, text, parent_id=None, author_key=None):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to comment on a Post.')
+        post = Post.objects.get(key=post_key)
+        if not post: raise KeyError('Post not found.')
+        author = None
+        if author_key:
+            author = Creator.objects.get(key=author_key, user=user)
+            if not author: raise KeyError('Author not found.')
+        parent = PostComment.objects.get(id=parent_id) if parent_id else None
+        comment = PostComment(
+            user = user,
+            post=post,
+            content=text,
+            author=author,
+            parent=parent,
+        )
+        comment.save()
+        return CreatePostComment(comment=comment)
+    
+class UpdatePostComment(graphene.Mutation):
+    '''Update an existing Comment on a Post'''
+    class Input():
+        comment_id = graphene.String(required=True)
+        text = graphene.String(required=True)
+
+    comment = graphene.Field(PostCommentObject)
+    
+    def mutate(self, info, comment_id, text):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to update a Comment.')
+        comment = PostComment.objects.get(id=comment_id)
+        if not comment: raise KeyError('Comment not found.')
+        if comment.user != user: raise KeyError('You are not authorized to update this Comment.')   
+        comment.content = text
+        comment.save()
+        return UpdatePostComment(comment=comment)
+
+class PostCommentVoteAction(graphene.Mutation):
+    '''Vote on a Comment'''
+    class Input():
+        comment_id = graphene.String(required=True)
+
+    comment = graphene.Field(PostCommentObject)
+    
+    def mutate(self, info, comment_id):
+        user = info.context.user
+        if not user: raise KeyError('You are not authorized to vote on a Comment.')
+        comment = PostComment.objects.get(id=comment_id)
+        if not comment: raise KeyError('Comment not found.')
+        vote = PostCommentVote.objects.filter(user=user, comment=comment)
+        if vote.exists():
+            vote.delete()
+        else:
+            vote = PostCommentVote(user=user, comment=comment)
+            vote.save()
+        return PostCommentVoteAction(comment=comment)
 
 
 '''****************** QUERIES ******************'''
@@ -260,6 +486,8 @@ class Query(graphene.ObjectType):
     Story = graphene.relay.node.Field(StoryObject)
     Posts = DjangoFilterConnectionField(PostObject)
     Post = graphene.relay.node.Field(PostObject)
+    StoryComments = DjangoFilterConnectionField(StoryCommentObject)
+    PostComments = DjangoFilterConnectionField(PostCommentObject)
 
     '''***** Non Usefull Queries *****'''
     Polls = DjangoFilterConnectionField(PostPollObject)
@@ -268,9 +496,22 @@ class Query(graphene.ObjectType):
 '''****************** MUTATIONS ******************'''
 
 class Mutation(graphene.ObjectType):
+
+    '''***** STORY MUTATIONS *****'''
     create_story = CreateStory.Field()
     update_story = UpdateStory.Field()
+    create_story_comment = CreateStoryComment.Field()
+    update_story_comment = UpdateStoryComment.Field()
+    clap_on_story = StoryClapAction.Field()
+    vote_on_story_comment = StoryCommentVoteAction.Field()
+
+    '''***** POST MUTATIONS *****'''
     create_post = CreatePost.Field()
+    clap_on_post = PostClapAction.Field()
+    create_post_comment = CreatePostComment.Field()
+    update_post_comment = UpdatePostComment.Field()
+    vote_on_post_comment = PostCommentVoteAction.Field()
+
     create_post_poll = CreatePostPoll.Field()
-    create_post_image = CreatePostImage.Field()
     do_vote_post_poll = VotePostPoll.Field()
+    create_post_image = CreatePostImage.Field()
