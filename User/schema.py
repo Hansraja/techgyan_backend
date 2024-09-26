@@ -25,6 +25,12 @@ class UserType(DjangoObjectType):
     
     def resolve_name(self, info):
         return self.get_full_name()
+    
+    def resolve_email(self, info):
+        user = info.context.user
+        if user.is_anonymous or user.pk != self.pk:
+            return None
+        return self.email[0] + '*' * (self.email.index('@') - 1) + self.email[self.email.index('@'):]
 
 class UserNode(DjangoObjectType):
     class Meta:
@@ -127,7 +133,7 @@ class Query(ObjectType):
         u = User.objects.get(username=username) if username else User.objects.get(key=key)
         return u
     
-    def resolve_me(self, info):
+    def resolve_Me(self, info):
         user = info.context.user
         if user.is_anonymous:
             raise Exception('Not logged in')
