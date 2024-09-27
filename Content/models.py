@@ -68,7 +68,7 @@ class StoryClap(models.Model):
     
 class StoryComment(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    story = models.ForeignKey('Story', on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey('User.User', on_delete=models.CASCADE)
     author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, null=True, blank=True)
     content = models.TextField()

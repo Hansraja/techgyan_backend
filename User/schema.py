@@ -15,7 +15,7 @@ class UserType(DjangoObjectType):
 
     class Meta:
         model = User
-        exclude = ('password', 'is_superuser', 'is_staff', 'is_active', 'date_joined', 'last_login')
+        exclude = ('password', 'is_superuser', 'is_staff', 'last_login')
 
     def resolve_is_followed(self, info):
         user = info.context.user
@@ -32,8 +32,9 @@ class UserType(DjangoObjectType):
             return None
         return self.email[0] + '*' * (self.email.index('@') - 1) + self.email[self.email.index('@'):]
 
-class UserNode(DjangoObjectType):
+class UserObject(UserType):
     class Meta:
+        super(UserType)
         model = User
         interfaces = (relay.Node, )
         filter_fields = {
@@ -41,7 +42,6 @@ class UserNode(DjangoObjectType):
             'email': ['exact', 'icontains'],
             'key': ['exact'],
         }
-        exclude = ('password', 'is_superuser', 'is_staff', 'is_active', 'date_joined', 'last_login')
         use_connection = True
 
     # @classmethod
@@ -123,7 +123,7 @@ class Mutation(ObjectType):
     login = LoginUser.Field()
 
 class Query(ObjectType):
-    Users = DjangoFilterConnectionField(UserNode)
+    Users = DjangoFilterConnectionField(UserObject)
     User = Field(UserType, username=String(), key=String())
     Me = Field(UserType)
 

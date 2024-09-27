@@ -12,8 +12,11 @@ from Api.subscriptions import Subscription as ApiSubscription, MySubscription
 class Query(UserQuery, CreatorQuery, ContentQuery, CommonQuery):
     hello = String(name=String(default_value="stranger"))
 
-    def resolve_hello(self, info, name):
-        MySubscription.broadcast(group="my_subscription", payload={"value": name})
+    async def resolve_hello(self, info, name):
+        i = 0
+        while i < 20:
+            i += 1
+            await MySubscription.broadcast_async(group="my_subscription", payload={"value": name})
         return f"Hello, {name}!"
 
 class Mutation(UserMutation, CreatorMutation, ContentMutation, CommonMutation):

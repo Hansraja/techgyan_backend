@@ -1,12 +1,10 @@
-from Creator.models import Creator, CreatorFollower
-from graphene import ObjectType, String, Schema, List
 import graphene
+from graphene import ObjectType, String, Schema, List
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
-from User.schema import UserType
 from Api import relay
 from Common.types import SocialLinkInput, ImageInput
-from Creator.models import Creator as CreatorModel
+from Creator.models import Creator, CreatorFollower
 from User.Utils.tools import ImageHandler
 
 class CreatorInput(graphene.InputObjectType):
@@ -23,8 +21,9 @@ class SocialLink(graphene.ObjectType):
     name = graphene.String()
     url = graphene.String()
 
-class Creator(DjangoObjectType):
+class CreatorObject(DjangoObjectType):
     social = List(SocialLink)
+    is_followed = graphene.Boolean()
     class Meta:
         model = Creator
         fields = "__all__"
@@ -33,8 +32,16 @@ class Creator(DjangoObjectType):
         filter_fields = {
             'name': ['exact', 'icontains'],
             'handle': ['exact', 'icontains'],
-            'key': ['exact']
+            'key': ['exact'],
+            'user__key': ['exact'],
+            'user__username': ['exact', 'icontains']
         }
+
+    def resolve_is_followed(self, info):
+        user = info.context.user
+        if not user.is_authenticated:
+            return False
+        return CreatorFollower.objects.filter(user=user, creator=self).exists()
 
 class CreatorFollowerType(DjangoObjectType):
     class Meta:
@@ -52,7 +59,7 @@ class CreateCreator(graphene.Mutation):
         name = graphene.String(required=True)
         handle = graphene.String(required=True)
 
-    creator = graphene.Field(Creator)
+    creator = graphene.Field(CreatorObject)
 
     def mutate(self, info, name, handle):
         user = info.context.user
@@ -65,7 +72,7 @@ class UpdateCreator(graphene.Mutation):
         key = graphene.String(required=True)
         data = CreatorInput(required=True)
 
-    creator = graphene.Field(Creator)
+    creator = graphene.Field(CreatorObject)
 
     def mutate(self, info, key, data):
         creator = CreatorModel.objects.get(key=key)
@@ -82,8 +89,8 @@ class UpdateCreator(graphene.Mutation):
         return UpdateCreator(creator=creator)
 
 class Query(ObjectType):
-    Creators = DjangoFilterConnectionField(Creator)
-    Creator = graphene.Field(Creator, name=String(), handle=String())
+    Creators = DjangoFilterConnectionField(CreatorObject)
+    Creator = graphene.Field(CreatorObject, name=String(), handle=String())
     CreatorFollowers = List(CreatorFollowerType)
 
     def resolve_Creator(self, info, key=None, handle=None):

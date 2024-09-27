@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "corsheaders",
     'graphene_django',
     'channels',
+    "django_filters",
 ] + [
     'User',
     'Common',

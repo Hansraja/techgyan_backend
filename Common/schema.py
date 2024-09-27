@@ -9,12 +9,16 @@ class SocialLinkInput(graphene.InputObjectType):
     url = graphene.String()
 
 class ImageObject(DjangoObjectType):
+    public_id = graphene.String()
     class Meta:
         model = Image
-        fields = '__all__'
+        fields = ('url', 'id', 'alt', 'caption', 'provider')
 
     def resolve_url(self, info):
         return ImageUrlBuilder(self).build_url()
+    
+    def resolve_public_id(self, info):
+        return self.url
 
 class TagObject(DjangoObjectType):
     class Meta:
@@ -29,8 +33,8 @@ class CategoryObject(DjangoObjectType):
 
 
 class Query(graphene.ObjectType):
-    tags = graphene.List(TagObject)
-    categories = graphene.List(CategoryObject)
+    Tags = graphene.List(TagObject)
+    Categories = graphene.List(CategoryObject)
 
 class Mutation(graphene.ObjectType):
     pass

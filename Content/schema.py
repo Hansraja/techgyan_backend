@@ -20,9 +20,21 @@ class StoryObject(DjangoObjectType):
             'title': ['exact', 'icontains'],
             'slug': ['exact', 'icontains'],
             'key': ['exact'],
+            'state': ['exact'],
+            'privacy': ['exact'],
+            'author__key': ['exact'],
+            'author__handle': ['exact', 'icontains'],
+            'author__user__username': ['exact', 'icontains'],
+            'author__user__key': ['exact'],
+            'category__name': ['exact'],
         }
         fields = '__all__'
         use_connection = True
+
+    comments_count = graphene.Int()
+
+    def resolve_comments_count(self, info):
+        return self.comments.filter(parent=None).count()
 
 class StoryClapObject(DjangoObjectType):
     class Meta:
@@ -41,6 +53,11 @@ class StoryCommentObject(DjangoObjectType):
         filter_fields = {
             'content': ['exact', 'icontains'],
             'id': ['exact'],
+            'user__username': ['exact', 'icontains'],
+            'user__key': ['exact'],
+            'story__key': ['exact'],
+            'author__key': ['exact'],
+            'parent__id': ['exact'],
         }
         fields = '__all__'
         use_connection = True
@@ -61,6 +78,15 @@ class PostObject(DjangoObjectType):
         filter_fields = {
             'text': ['exact', 'icontains'],
             'key': ['exact'],
+            'state': ['exact'],
+            'privacy': ['exact'],
+            'author__key': ['exact'],
+            'author__handle': ['exact', 'icontains'],
+            'author__user__username': ['exact', 'icontains'],
+            'author__user__key': ['exact'],
+            'type_of': ['exact'],
+            'type_poll__id': ['exact'],
+            'type_image__id': ['exact'],
         }
         fields = '__all__'
         use_connection = True
@@ -132,6 +158,11 @@ class PostCommentObject(DjangoObjectType):
         filter_fields = {
             'content': ['exact', 'icontains'],
             'id': ['exact'],
+            'user__username': ['exact', 'icontains'],
+            'user__key': ['exact'],
+            'post__key': ['exact'],
+            'author__key': ['exact'],
+            'parent__id': ['exact'],
         }
         fields = '__all__'
         use_connection = True
