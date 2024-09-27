@@ -43,13 +43,21 @@ AUTH_USER_MODEL = 'User.User'
 GRAPHENE = {
     "SCHEMA": "Api.schema.schema",
     "SUBSCRIPTION_PATH": "/api/",
-    
+    'SCHEMA_INDENT': 4,
+    'RELAY_CONNECTION_MAX_LIMIT': 200,
+    'RELAY_CONNECTION_ENFORCE_FIRST_OR_LAST': False,
+    'RELAY_CONNECTION_ENFORCE_OFFSET': False,
 }
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                "address": "unix:///home/college1/tmp/redis.sock",
+            }],
+        },
+    },
 }
 
 INSTALLED_APPS = [
@@ -59,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "corsheaders",
     'graphene_django',
     'channels',
 ] + [
@@ -72,6 +81,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -138,12 +148,23 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
 USE_TZ = True
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
