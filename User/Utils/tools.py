@@ -1,6 +1,8 @@
+import cloudinary.uploader
 from Common.models import Image
 from Common.types import ImageInput
 from cloudinary import CloudinaryImage
+import cloudinary
 
 
 class ImageHandler():
@@ -22,7 +24,10 @@ class ImageHandler():
     def update_image(self, image: Image) -> Image | None:
         if not self.image_input.url and not self.image_input.provider:
             return None
-        image.url = self.image_input.url if self.image_input.url else image.url
+        if self.image_input.url and image.url:
+            if self.image_input.url != image.url:
+                cloudinary.uploader.destroy(image.url)
+                image.url = self.image_input.url
         image.provider = self.image_input.provider if self.image_input.provider else image.provider
         image.alt = self.image_input.alt if self.image_input.alt else image.alt
         image.caption = self.image_input.caption if self.image_input.caption else image.caption
@@ -32,6 +37,8 @@ class ImageHandler():
     def delete_image(self, image: Image) -> bool:
         if not image:
             return False
+        if image.provider == 'cloudinary':
+            cloudinary.uploader.destroy(image.url)
         image.delete()
         return True
     

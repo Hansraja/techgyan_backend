@@ -10,18 +10,11 @@ from User.types import LoginObject
 from .models import User
 
 class UserType(DjangoObjectType):
-    is_followed = Boolean()
     name = graphene.String()
 
     class Meta:
         model = User
         exclude = ('password', 'is_superuser', 'is_staff', 'last_login')
-
-    def resolve_is_followed(self, info):
-        user = info.context.user
-        if user.is_anonymous:
-            return False
-        return self.following.filter(pk=user.pk).exists()
     
     def resolve_name(self, info):
         return self.get_full_name()

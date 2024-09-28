@@ -63,7 +63,7 @@ class CreateCreator(graphene.Mutation):
 
     def mutate(self, info, name, handle):
         user = info.context.user
-        new_creator = CreatorModel(name=name, handle=handle, user=user)
+        new_creator = Creator(name=name, handle=handle, user=user)
         new_creator.save()
         return CreateCreator(creator=new_creator)
     
@@ -75,7 +75,7 @@ class UpdateCreator(graphene.Mutation):
     creator = graphene.Field(CreatorObject)
 
     def mutate(self, info, key, data):
-        creator = CreatorModel.objects.get(key=key)
+        creator = Creator.objects.get(key=key)
         if data.name: creator.name = data.name
         if data.description: creator.description = data.description
         if data.social: creator.social = data.social
