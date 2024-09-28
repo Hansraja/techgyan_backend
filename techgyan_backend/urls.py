@@ -23,7 +23,7 @@ from Api.graphql import GraphQl
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', GraphQl.as_view(graphiql=True,)),
+    path('api/', GraphQl.as_view(graphiql=True, pretty=True)),
     path('image_upload', image_upload)
 ]
 

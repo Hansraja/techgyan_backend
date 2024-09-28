@@ -15,13 +15,13 @@ class MySubscription(channels_graphql_ws.Subscription):
         pass
 
     @staticmethod
-    def subscribe(root, info):
+    async def subscribe(root, info):
         """Called when user subscribes."""
         # Return the list of subscription group names.
         return ["my_subscription"]
 
     @staticmethod
-    def publish(payload, info):
+    async def publish(payload, info):
         """Called to notify the client."""
 
         # Here `payload` contains the `payload` from the `broadcast()`

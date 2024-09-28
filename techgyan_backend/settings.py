@@ -51,12 +51,7 @@ GRAPHENE = {
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [{
-                "address": "unix:///home/college1/tmp/redis.sock",
-            }],
-        },
+        "BACKEND":  "channels.layers.InMemoryChannelLayer"
     },
 }
 
