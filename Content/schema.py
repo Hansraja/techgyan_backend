@@ -32,9 +32,20 @@ class StoryObject(DjangoObjectType):
         use_connection = True
 
     comments_count = graphene.Int()
+    claps_count = graphene.Int()
+    clapped_by_me = graphene.Boolean()
+    bookmarked_by_me = graphene.Boolean()
 
     def resolve_comments_count(self, info):
         return self.comments.filter(parent=None).count()
+    
+    def resolve_claps_count(self, info):
+        return self.claps.count()
+    
+    def resolve_clapped_by_me(self, info):
+        if info.context.user.is_authenticated:
+            return self.claps.filter(user=info.context.user).exists()
+        else: return False
 
 class StoryClapObject(DjangoObjectType):
     class Meta:
@@ -69,7 +80,16 @@ class StoryCommentObject(DjangoObjectType):
         return self.get_votes()
     
     def resolve_my_vote(self, info):
-        return self.user_vote(info.context.user)
+        if info.context.user.is_authenticated:
+            return self.user_vote(info.context.user)
+        else: return None
+
+    @classmethod
+    def get_queryset(cls, queryset, info, **kwargs):
+        if info.variable_values.get('parent_Id', None):
+            p_Id = info.variable_values.get('parent_Id')
+            return queryset.filter(parent__id=p_Id)
+        return queryset.filter(parent__id=None)
 
 class PostObject(DjangoObjectType):
     class Meta:
@@ -90,6 +110,21 @@ class PostObject(DjangoObjectType):
         }
         fields = '__all__'
         use_connection = True
+
+    comments_count = graphene.Int()
+    claps_count = graphene.Int()
+    clapped_by_me = graphene.Boolean()
+
+    def resolve_comments_count(self, info):
+        return self.comments.filter(parent=None).count()
+    
+    def resolve_claps_count(self, info):
+        return self.claps.count()
+    
+    def resolve_clapped_by_me(self, info):
+        if info.context.user.is_authenticated:
+            return self.claps.filter(user=info.context.user).exists()
+        else: return False
 
 class PostClapObject(DjangoObjectType):
     class Meta:
@@ -127,7 +162,7 @@ class PostPollObject(DjangoObjectType):
                     'votes': votes.filter(option=option.get('id')).count()
                 })
             return options
-        else: self.options
+        else: return self.options
 
     def resolve_my_vote(self, info):
         if info.context.user.is_authenticated:
@@ -167,6 +202,24 @@ class PostCommentObject(DjangoObjectType):
         fields = '__all__'
         use_connection = True
 
+    votes = graphene.Int()
+    my_vote = graphene.String()
+
+    def resolve_votes(self, info):
+        return self.get_votes()
+    
+    def resolve_my_vote(self, info):
+        if info.context.user.is_authenticated:
+            return self.user_vote(info.context.user)
+        else: return None
+
+    @classmethod
+    def get_queryset(cls, queryset, info, **kwargs):
+        if info.variable_values.get('parent_Id', None):
+            p_Id = info.variable_values.get('parent_Id')
+            return queryset.filter(parent__id=p_Id)
+        return queryset.filter(parent__id=None)
+
 
 '''****************** MUTATIONS TYPES ******************'''
 
@@ -192,7 +245,7 @@ class StoryClapAction(graphene.Mutation):
     class Input():
         story_key = graphene.String(required=True)
 
-    clap = graphene.Field(StoryClapObject)
+    story = graphene.Field(StoryObject)
     
     def mutate(self, info, story_key):
         user = info.context.user if info.context.user.is_authenticated else None
@@ -202,10 +255,12 @@ class StoryClapAction(graphene.Mutation):
         clap = StoryClap.objects.filter(user=user, story=story)
         if clap.exists():
             clap.delete()
-            return StoryClapAction(clap=None)
+            story.refresh_from_db()
+            return StoryClapAction(story=story)
         clap = StoryClap(user=user, story=story)
         clap.save()
-        return StoryClapAction(clap=clap)
+        story.refresh_from_db()
+        return StoryClapAction(story=story)
     
 class UpdateStory(graphene.Mutation):
     '''Update an existing Story'''
@@ -354,7 +409,7 @@ class PostClapAction(graphene.Mutation):
     class Input():
         post_key = graphene.String(required=True)
 
-    clap = graphene.Field(PostClapObject)
+    post = graphene.Field(PostObject)
     
     def mutate(self, info, post_key):
         user = info.context.user if info.context.user.is_authenticated else None
@@ -364,10 +419,12 @@ class PostClapAction(graphene.Mutation):
         clap = PostClap.objects.filter(user=user, post=post)
         if clap.exists():
             clap.delete()
-            return PostClapAction(clap=None)
+            post.refresh_from_db()
+            return PostClapAction(post=post)
         clap = PostClap(user=user, post=post)
         clap.save()
-        return PostClapAction(clap=clap)
+        post.refresh_from_db()
+        return PostClapAction(post=post)
     
 class CreatePostPoll(graphene.Mutation):
     '''Create a new Poll Post'''

@@ -8,7 +8,7 @@ class Story(models.Model):
     title = models.CharField(max_length=255, blank=True)
     description = models.TextField(null=True, blank=True)
     content = models.TextField(blank=True)
-    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE)
+    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, related_name="stories")
     image = models.ForeignKey('Common.Image', on_delete=models.SET_NULL, null=True, blank=True)
     state = models.CharField(max_length=20, default='draft', choices=[
         ('draft', 'Draft'),
@@ -21,7 +21,7 @@ class Story(models.Model):
         ('private', 'Private'),
         ('unlisted', 'Unlisted')
     ])
-    tags = models.ManyToManyField('Common.Tag', blank=True)
+    tags = models.ManyToManyField('Common.Tag', blank=True,)
     category = models.ForeignKey('Common.Category', on_delete=models.SET_NULL, null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     scheduled_at = models.DateTimeField(null=True, blank=True)
@@ -47,8 +47,8 @@ class Story(models.Model):
 
 class StoryClap(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    story = models.ForeignKey('Story', on_delete=models.CASCADE)
-    user = models.ForeignKey('User.User', on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE, related_name="claps")
+    user = models.ForeignKey('User.User', on_delete=models.CASCADE, related_name="story_claps")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -69,10 +69,10 @@ class StoryClap(models.Model):
 class StoryComment(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
     story = models.ForeignKey('Story', on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey('User.User', on_delete=models.CASCADE)
-    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey('User.User', on_delete=models.CASCADE, related_name='story_comments')
+    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, null=True, blank=True, related_name='story_comments')
     content = models.TextField()
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
@@ -103,7 +103,7 @@ class StoryComment(models.Model):
     
 class StoryCommentVote(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    comment = models.ForeignKey('StoryComment', on_delete=models.CASCADE)
+    comment = models.ForeignKey('StoryComment', on_delete=models.CASCADE, related_name="votes")
     user = models.ForeignKey('User.User', on_delete=models.CASCADE)
     vote = models.CharField(max_length=20, choices=[
         ('up', 'Up'),
@@ -141,7 +141,7 @@ class Post(models.Model):
     ])
     type_poll = models.OneToOneField('PostPoll', on_delete=models.CASCADE, null=True, blank=True)
     type_image = models.OneToOneField('PostImage', on_delete=models.CASCADE, null=True, blank=True)
-    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE)
+    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, related_name="posts")
     state = models.CharField(max_length=20, default='published', choices=[
         ('draft', 'Draft'),
         ('published', 'Published'),
@@ -178,8 +178,8 @@ class Post(models.Model):
 
 class PostClap(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
-    user = models.ForeignKey('User.User', on_delete=models.CASCADE)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="claps")
+    user = models.ForeignKey('User.User', on_delete=models.CASCADE, related_name="post_claps")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -200,11 +200,11 @@ class PostClap(models.Model):
 
 class PostComment(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    post = models.ForeignKey('Post', on_delete=models.CASCADE)
-    user = models.ForeignKey('User.User', on_delete=models.CASCADE)
-    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, null=True, blank=True)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey('User.User', on_delete=models.CASCADE, related_name="post_comments")
+    author = models.ForeignKey('Creator.Creator', on_delete=models.CASCADE, null=True, blank=True, related_name="post_comments")
     content = models.TextField()
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
@@ -224,10 +224,19 @@ class PostComment(models.Model):
         super().save(*args, **kwargs)
         return self
     
+    def get_votes(self):
+        votes = PostCommentVote.objects.filter(comment=self).count()
+        return votes
+    
+    def user_vote(self, user):
+        votes = PostCommentVote.objects.filter(comment=self, user=user)
+        user_vote = votes.first().id if votes.exists() else None
+        return user_vote
+    
 
 class PostCommentVote(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    comment = models.ForeignKey('PostComment', on_delete=models.CASCADE)
+    comment = models.ForeignKey('PostComment', on_delete=models.CASCADE, related_name="votes")
     user = models.ForeignKey('User.User', on_delete=models.CASCADE)
     vote = models.CharField(max_length=20, choices=[
         ('up', 'Up'),
@@ -292,8 +301,8 @@ class PostPoll(models.Model):
 
 class PostPollVote(models.Model):
     id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    poll = models.ForeignKey('PostPoll', on_delete=models.CASCADE)
-    user = models.ForeignKey('User.User', on_delete=models.CASCADE)
+    poll = models.ForeignKey('PostPoll', on_delete=models.CASCADE, related_name="votes")
+    user = models.ForeignKey('User.User', on_delete=models.CASCADE, related_name="poll_votes")
     option = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -36,5 +36,8 @@ class Query(graphene.ObjectType):
     Tags = graphene.List(TagObject)
     Categories = graphene.List(CategoryObject)
 
+    def resolve_Categories(self, info):
+        return Category.objects.all()
+
 class Mutation(graphene.ObjectType):
     pass
