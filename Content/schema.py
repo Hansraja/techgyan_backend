@@ -10,6 +10,7 @@ from Common.models import Category, Tag
 from datetime import datetime
 from User.Utils.tools import ImageHandler
 from Common.types import ImageInput
+from django.db import router
 
 
 class StoryObject(DjangoObjectType):
@@ -498,13 +499,14 @@ class CreatePostImage(graphene.Mutation):
     def mutate(self, info, caption, images):
         user = info.context.user if info.context.user.is_authenticated else None
         if not user: raise KeyError('You are not authorized to create an Image Post.')
-        post_image = PostImage(
+        db = router.db_for_write(PostImage)
+        post_image = PostImage.objects.using(db).create(
             caption=caption,
         )
         for image in images:
             image = ImageHandler(image_input=image).auto_image()
             if image: post_image.images.add(image)
-        post_image.save()
+        post_image.save(using=db)
         return CreatePostImage(post_image=post_image)
     
 class CreatePostComment(graphene.Mutation):

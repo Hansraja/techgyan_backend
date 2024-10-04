@@ -19,7 +19,7 @@ class StoryCommentModel(admin.ModelAdmin):
 class StoryCommentVoteModel(admin.ModelAdmin):
     pass
 
-from .models import Post, PostClap, PostComment, PostCommentVote, PostPoll, PostPollVote, PostImage, PostImageObj
+from .models import Post, PostClap, PostComment, PostCommentVote, PostPoll, PostPollVote, PostImage
 
 @admin.register(Post)
 class PostModel(admin.ModelAdmin):
@@ -48,11 +48,6 @@ class PostPollVoteModel(admin.ModelAdmin):
 @admin.register(PostImage)
 class PostImageModel(admin.ModelAdmin):
     pass
-
-@admin.register(PostImageObj)
-class PostImageObjModel(admin.ModelAdmin):
-    pass
-
 
 
 

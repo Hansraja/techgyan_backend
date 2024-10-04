@@ -3,6 +3,7 @@ from Common.models import Image
 from Common.types import ImageInput
 from cloudinary import CloudinaryImage
 import cloudinary
+from django.db import router
 
 
 class ImageHandler():
@@ -12,13 +13,14 @@ class ImageHandler():
     def create_image(self) -> Image | None:
         if not self.image_input.url or not self.image_input.provider:
             return None
+        db = router.db_for_write(Image)
         img = Image.objects.create(
             url=self.image_input.url,
             provider=self.image_input.provider,
             alt=self.image_input.alt,
             caption=self.image_input.caption
         )
-        img.save()
+        img.save(using=db)
         return img
 
     def update_image(self, image: Image) -> Image | None:

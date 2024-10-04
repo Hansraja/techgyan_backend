@@ -396,7 +396,7 @@ class PostImage(models.Model):
     caption = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    images = models.ManyToManyField('Common.Image', through='PostImageObj')
+    images = models.ManyToManyField('Common.Image', related_name='images')
     
     class Meta:
         db_table = 'post_images'
@@ -412,22 +412,3 @@ class PostImage(models.Model):
         super().save(*args, **kwargs)
         return self
     
-
-class PostImageObj(models.Model):
-    id = models.CharField(max_length=40, unique=True, editable=False, primary_key=True)
-    post_image = models.ForeignKey('PostImage', on_delete=models.CASCADE)
-    image = models.ForeignKey('Common.Image', on_delete=models.CASCADE)
-    
-    class Meta:
-        db_table = 'post_image_objs'
-        verbose_name = 'post image object'
-        verbose_name_plural = 'post image objects'
-    
-    def __str__(self):
-        return self.id
-    
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            self.id = generate(size=40)
-        super().save(*args, **kwargs)
-        return self
