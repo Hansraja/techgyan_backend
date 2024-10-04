@@ -75,6 +75,7 @@ class StoryCommentObject(DjangoObjectType):
 
     votes = graphene.Int()
     my_vote = graphene.String()
+    reply_count = graphene.Int()
 
     def resolve_votes(self, info):
         return self.get_votes()
@@ -83,6 +84,9 @@ class StoryCommentObject(DjangoObjectType):
         if info.context.user.is_authenticated:
             return self.user_vote(info.context.user)
         else: return None
+
+    def resolve_reply_count(self, info):
+        return self.replies.count()
 
     @classmethod
     def get_queryset(cls, queryset, info, **kwargs):
@@ -204,6 +208,7 @@ class PostCommentObject(DjangoObjectType):
 
     votes = graphene.Int()
     my_vote = graphene.String()
+    reply_count = graphene.Int()
 
     def resolve_votes(self, info):
         return self.get_votes()
@@ -213,13 +218,16 @@ class PostCommentObject(DjangoObjectType):
             return self.user_vote(info.context.user)
         else: return None
 
+    def resolve_reply_count(self, info):
+        return self.replies.count()
+
     @classmethod
     def get_queryset(cls, queryset, info, **kwargs):
         if info.variable_values.get('parent_Id', None):
             p_Id = info.variable_values.get('parent_Id')
             return queryset.filter(parent__id=p_Id)
         return queryset.filter(parent__id=None)
-
+    
 
 '''****************** MUTATIONS TYPES ******************'''
 
