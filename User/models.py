@@ -49,6 +49,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
+
+    saved_stories = models.ManyToManyField('Content.Story', related_name='saved_by', blank=True)
+    saved_posts = models.ManyToManyField('Content.Post', related_name='saved_by', blank=True)
     
     objects = UserManager()
     
