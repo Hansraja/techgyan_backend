@@ -1,6 +1,6 @@
 from django.db import models
 from nanoid import generate
-from django.contrib.postgres.fields import ArrayField
+from cloudinary import CloudinaryImage
 
 # Create your models here.
 
@@ -32,6 +32,14 @@ class Creator(models.Model):
             self.key = generate(size=24)
         super().save(*args, **kwargs)
         return self
+    
+    def get_banner_url(self):
+        url = CloudinaryImage(self.banner.url).build_url(transformation=[
+                {'crop': 'fill', 'width': 1138, 'height': 188, 'gravity': 'center'},
+                {'fetch_format': 'auto'},
+                {'quality': 'auto'}
+            ])
+        return url
     
 class CreatorFollower(models.Model):
     creator = models.ForeignKey(Creator, on_delete=models.CASCADE, related_name='followers')

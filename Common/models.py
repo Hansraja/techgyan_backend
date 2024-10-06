@@ -12,6 +12,9 @@ class Image(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     provider = models.CharField(max_length=255, default='cloudinary')
 
+    has_url = False
+    _url = None
+    
     class Meta:
         db_table = 'images'
         verbose_name = 'image'

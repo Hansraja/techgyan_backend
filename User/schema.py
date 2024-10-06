@@ -80,20 +80,21 @@ class UserInput(graphene.InputObjectType):
 
 class UpdateUser(graphene.Mutation):
     class Input:
-        key = String(required=True)
-        data = UserInput()
+        input = UserInput()
 
     user = Field(UserType)
 
-    def mutate(self, info, key = None, data = None):
-        user = User.objects.get(key=key)
-        user.username = data.username if data.username else user.username
-        user.first_name = data.first_name if data.first_name else user.first_name
-        user.last_name = data.last_name if data.last_name else user.last_name
-        user.sex = data.sex if data.sex else user.sex
-        user.dob = data.dob if data.dob else user.dob
-        if data.image:
-            user.image = ImageHandler(data.image).auto_image()
+    def mutate(self, info, input = None):
+        if info.context.user.is_anonymous:
+            raise Exception('Not logged in')
+        user = info.context.user
+        user.username = input.username if input.username else user.username
+        user.first_name = input.first_name if input.first_name else user.first_name
+        user.last_name = input.last_name if input.last_name else user.last_name
+        user.sex = input.sex if input.sex else user.sex
+        user.dob = input.dob if input.dob else user.dob
+        if input.image:
+            user.image = ImageHandler(input.image).auto_image()
         user.save()
         return UpdateUser(user=user)
     
@@ -110,10 +111,9 @@ class DeleteUser(gRelay.ClientIDMutation):
         return DeleteUser(user=None)
 
 class Mutation(ObjectType):
-    create_user = CreateUser.Field()
-    update_user = UpdateUser.Field()
-    delete_user = DeleteUser.Field()
+    register = CreateUser.Field()
     login = LoginUser.Field()
+    update_me = UpdateUser.Field()
 
 class Query(ObjectType):
     Users = DjangoFilterConnectionField(UserObject)

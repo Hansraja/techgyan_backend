@@ -6,6 +6,7 @@ from Api import relay
 from Common.types import SocialLinkInput, ImageInput
 from Creator.models import Creator, CreatorFollower
 from User.Utils.tools import ImageHandler
+from Common.schema import ImageObject
 
 class CreatorInput(graphene.InputObjectType):
     name = graphene.String()
@@ -24,6 +25,8 @@ class SocialLink(graphene.ObjectType):
 class CreatorObject(DjangoObjectType):
     social = List(SocialLink)
     is_followed = graphene.Boolean()
+    banner = ImageObject()
+
     class Meta:
         model = Creator
         fields = "__all__"
@@ -42,6 +45,12 @@ class CreatorObject(DjangoObjectType):
         if not user.is_authenticated:
             return False
         return CreatorFollower.objects.filter(user=user, creator=self).exists()
+    
+    def resolve_banner(self, info):
+        banner = self.banner
+        banner.has_url = True
+        banner._url = self.get_banner_url()
+        return banner
 
 class CreatorFollowerType(DjangoObjectType):
     class Meta:

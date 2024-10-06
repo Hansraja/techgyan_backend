@@ -15,6 +15,8 @@ class ImageObject(DjangoObjectType):
         fields = ('url', 'id', 'alt', 'caption', 'provider')
 
     def resolve_url(self, info):
+        if isinstance(self, Image) and self.has_url:
+            return self._url
         return ImageUrlBuilder(self).build_url()
     
     def resolve_public_id(self, info):
