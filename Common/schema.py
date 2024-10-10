@@ -10,6 +10,9 @@ class SocialLinkInput(graphene.InputObjectType):
 
 class ImageObject(DjangoObjectType):
     public_id = graphene.String()
+    blur_url = graphene.String()
+    has_image = graphene.Boolean()
+
     class Meta:
         model = Image
         fields = ('url', 'id', 'alt', 'caption', 'provider')
@@ -21,6 +24,12 @@ class ImageObject(DjangoObjectType):
     
     def resolve_public_id(self, info):
         return self.url
+    
+    def resolve_has_image(self, info):
+        return self.id is not None
+    
+    def resolve_blur_url(self, info):
+        return 'https://res.cloudinary.com/dxjse9tsv/image/upload/c_fill,g_auto,h_10,w_10/v1629780000/placeholder.jpg'
 
 class TagObject(DjangoObjectType):
     class Meta:

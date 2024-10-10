@@ -45,6 +45,11 @@ class CreatorFollower(models.Model):
     creator = models.ForeignKey(Creator, on_delete=models.CASCADE, related_name='followers')
     user = models.ForeignKey('User.User', on_delete=models.CASCADE, related_name='following')
     created_at = models.DateTimeField(auto_now_add=True)
+    notifications = models.CharField(
+        max_length=255, 
+        choices=[('all', 'All'), ('none', 'None'), ('personalized', 'Personalized')], 
+        default='personalized'
+    )
 
     class Meta:
         db_table = 'creator_followers'

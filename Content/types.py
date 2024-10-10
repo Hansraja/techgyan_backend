@@ -1,5 +1,9 @@
+from random import choices
 import graphene
 from Common.types import ImageInput
+from django_filters import OrderingFilter, FilterSet
+import django_filters
+from Content.models import PostComment, StoryComment
 
 class StateEnum(graphene.Enum):
     '''State of the content'''
@@ -57,3 +61,64 @@ class PostPollOptionObject(graphene.ObjectType):
     id = graphene.Int()
     text = graphene.String()
     votes = graphene.Int()
+
+
+'''****************** FilterSet  ******************'''
+
+class StoryCommentFilter(FilterSet):
+    '''FilterSet for Comment'''
+    class Meta:
+        model = StoryComment
+        fields = {
+            'content': ['exact', 'icontains'],
+            'id': ['exact'],
+            'user__username': ['exact', 'icontains'],
+            'user__key': ['exact'],
+            'story__key': ['exact'],
+            'author__key': ['exact'],
+            'parent__id': ['exact'],
+        }
+
+    order_by = OrderingFilter(
+        choices=(
+            ('created_at', 'created_at'),
+            ('updated_at', 'updated_at'),
+        ),
+        fields=(
+            ('created_at', 'created_at'),
+            ('updated_at', 'updated_at'),
+        ),
+        field_labels={
+            'created_at': 'created_at (default)',
+            'updated_at': 'updated_at (default)',
+        },
+    )
+
+class PostCommentFilter(FilterSet):
+    '''FilterSet for Post Comment'''
+    class Meta:
+        model = PostComment
+        fields = {
+            'content': ['exact', 'icontains'],
+            'id': ['exact'],
+            'user__username': ['exact', 'icontains'],
+            'user__key': ['exact'],
+            'post__key': ['exact'],
+            'author__key': ['exact'],
+            'parent__id': ['exact'],
+        }
+
+    order_by = OrderingFilter(
+        choices=(
+            ('created_at', 'created_at'),
+            ('updated_at', 'updated_at'),
+        ),
+        fields=(
+            ('created_at', 'created_at'),
+            ('updated_at', 'updated_at'),
+        ),
+        field_labels={
+            'created_at': 'created_at (default)',
+            'updated_at': 'updated_at (default)',
+        }
+    )

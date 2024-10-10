@@ -5,6 +5,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from Api import relay
 from Common.types import SocialLinkInput, ImageInput
 from Creator.models import Creator, CreatorFollower
+from Creator.types import CreatorFollowedObject, CreatorNotificationEnum
 from User.Utils.tools import ImageHandler
 from Common.schema import ImageObject
 
@@ -24,7 +25,7 @@ class SocialLink(graphene.ObjectType):
 
 class CreatorObject(DjangoObjectType):
     social = List(SocialLink)
-    is_followed = graphene.Boolean()
+    followed = graphene.Field(CreatorFollowedObject)
     banner = ImageObject()
 
     class Meta:
@@ -40,14 +41,20 @@ class CreatorObject(DjangoObjectType):
             'user__username': ['exact', 'icontains']
         }
 
-    def resolve_is_followed(self, info):
+    def resolve_followed(self, info):
         user = info.context.user
-        if not user.is_authenticated:
-            return False
-        return CreatorFollower.objects.filter(user=user, creator=self).exists()
-    
+        if user.is_anonymous:
+            return None
+        else:
+            data = CreatorFollower.objects.filter(creator=self, user=user).first()
+            if not data:
+                return CreatorFollowedObject(False, None)
+            return CreatorFollowedObject(True, data.notifications)
+
     def resolve_banner(self, info):
         banner = self.banner
+        if not banner:
+            return None
         banner.has_url = True
         banner._url = self.get_banner_url()
         return banner
@@ -96,6 +103,45 @@ class UpdateCreator(graphene.Mutation):
             creator.banner = ImageHandler(data.banner).auto_image()
         creator.save()
         return UpdateCreator(creator=creator)
+    
+class FollowCreator(graphene.Mutation):
+    class Input:
+        creator_key = graphene.String(required=True)
+        notifications = CreatorNotificationEnum()
+
+    creator = graphene.Field(CreatorObject)
+
+    def mutate(self, info, creator_key, notifications):
+        user = info.context.user
+        if user.is_anonymous:
+            raise Exception('Please login to follow a creator')
+        creator = Creator.objects.get(key=creator_key)
+        is_following = CreatorFollower.objects.filter(creator=creator, user=user).first()
+        if is_following:
+            is_following.notifications = notifications.value
+            is_following.save()
+            return FollowCreator(creator=creator)
+        new_follower = CreatorFollower(creator=creator, user=user, notifications=notifications.value)
+        new_follower.save()
+        return FollowCreator(creator=creator)
+
+
+class UnfollowCreator(graphene.Mutation):
+    class Input:
+        creator_key = graphene.String(required=True)
+
+    creator = graphene.Field(CreatorObject)
+
+    def mutate(self, info, creator_key):
+        user = info.context.user
+        if user.is_anonymous:
+            raise Exception('Please login to unfollow a creator')
+        creator = Creator.objects.get(key=creator_key)
+        is_following = CreatorFollower.objects.filter(creator=creator, user=user)
+        if not is_following.exists():
+            raise Exception('You are not following this creator')
+        is_following.delete()
+        return UnfollowCreator(creator=creator)
 
 class Query(ObjectType):
     Creators = DjangoFilterConnectionField(CreatorObject)
@@ -115,3 +161,5 @@ class Query(ObjectType):
 class Mutation(graphene.ObjectType):
     create_creator = CreateCreator.Field()
     update_creator = UpdateCreator.Field()
+    follow_creator = FollowCreator.Field()
+    unfollow_creator = UnfollowCreator.Field()

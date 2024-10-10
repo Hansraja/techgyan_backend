@@ -1,11 +1,13 @@
+from urllib.parse import quote_plus
 import graphene
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
+from Common.schema import ImageObject
 from Content.models import Story, Post, PostPoll, PostImage, PostPollVote, StoryComment, StoryCommentVote, PostComment, PostCommentVote, StoryClap, PostClap
 from Api import relay
 from Creator.models import Creator
 from nanoid import generate
-from Content.types import StoryUpdateInput, PostInput, PostPollOptionInput, PostPollOptionObject
+from Content.types import PostCommentFilter, StoryCommentFilter, StoryUpdateInput, PostInput, PostPollOptionInput, PostPollOptionObject
 from Common.models import Category, Tag
 from datetime import datetime
 from User.Utils.tools import ImageHandler
@@ -53,6 +55,11 @@ class StoryObject(DjangoObjectType):
             return info.context.user.saved_stories.filter(key=self.key).exists()
         else: return False
 
+    def resolve_image(self, info):
+        if self.image: return self.image
+        else: return ImageObject(url=f'https://placehold.co/1280x720/pink/black?text={quote_plus(self.title)}')
+
+
 class StoryClapObject(DjangoObjectType):
     class Meta:
         model = StoryClap
@@ -67,15 +74,7 @@ class StoryCommentObject(DjangoObjectType):
     class Meta:
         model = StoryComment
         interfaces = (relay.Node, )
-        filter_fields = {
-            'content': ['exact', 'icontains'],
-            'id': ['exact'],
-            'user__username': ['exact', 'icontains'],
-            'user__key': ['exact'],
-            'story__key': ['exact'],
-            'author__key': ['exact'],
-            'parent__id': ['exact'],
-        }
+        filterset_class = StoryCommentFilter
         fields = '__all__'
         use_connection = True
 
@@ -206,15 +205,7 @@ class PostCommentObject(DjangoObjectType):
     class Meta:
         model = PostComment
         interfaces = (relay.Node, )
-        filter_fields = {
-            'content': ['exact', 'icontains'],
-            'id': ['exact'],
-            'user__username': ['exact', 'icontains'],
-            'user__key': ['exact'],
-            'post__key': ['exact'],
-            'author__key': ['exact'],
-            'parent__id': ['exact'],
-        }
+        filterset_class = PostCommentFilter
         fields = '__all__'
         use_connection = True
 
@@ -654,9 +645,18 @@ class Query(graphene.ObjectType):
     StoryComments = DjangoFilterConnectionField(StoryCommentObject)
     PostComments = DjangoFilterConnectionField(PostCommentObject)
 
+    '''***** User Content *****'''
+    MySavedStories = DjangoFilterConnectionField(StoryObject)
+
     '''***** Non Usefull Queries *****'''
     Polls = DjangoFilterConnectionField(PostPollObject)
     PostImages = DjangoFilterConnectionField(PostImageObject)
+
+    def resolve_MySavedStories(self, info):
+        user = info.context.user
+        if user.is_authenticated:
+            return user.saved_stories.all()
+        return None
 
 '''****************** MUTATIONS ******************'''
 
